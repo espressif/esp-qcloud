@@ -1,0 +1,27 @@
+menu "Example Configuration"
+
+    config APP_LED_GPIO
+        int "RGB LED GPIO"
+        default 18
+        help
+            Set the WS2812 RGB LED GPIO.
+
+    config QCLOUD_PRODUCT_ID
+        string "Product ID"
+        default "PRODUCT_ID"
+        help
+            Set the Product ID.
+        
+    config QCLOUD_DEVICE_NAME
+        string "Device Name"
+        default "DEVICE_NAME"
+        help
+            Set the Device Name.
+        
+    config QCLOUD_DEVICE_SECRET
+        string "Device Secret"
+        default "DEVICE_SECRET"
+        help
+            Set the Device Secret.
+
+endmenu

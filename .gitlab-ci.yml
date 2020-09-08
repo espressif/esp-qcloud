@@ -1,0 +1,127 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  V: "0"
+  MAKEFLAGS: "-j8 --no-keep-going"
+  IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
+  APP_BUILD: "all"
+
+before_script:
+   # add gitlab ssh key
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    # Create esp-qcloud-bins-${CI_JOB_ID}/ dir (to copy binaries into for artifacts)
+    - mkdir -p $CI_PROJECT_DIR/esp-qcloud-bins-${CI_JOB_ID}
+
+.setup_idf: &setup_idf
+# Checking git version
+- echo Checking git version
+- git --version
+# Cloning esp-idf - Started
+- echo Cloning esp-idf - Started
+- git clone --recursive --branch master --depth 1 $GITLAB_SSH_SERVER/idf/esp-idf.git
+- cd esp-idf
+- echo Cloning esp-idf - Done
+# Cloning esp-idf - Done
+# Running install.sh - Started
+- echo Running install.sh - Started
+- ./install.sh
+- echo Running install.sh - Done
+# Running install.sh - Done
+# Running export.sh - Started
+- echo Running export.sh - Started
+- . export.sh
+- echo Running export.sh - Done
+# Running export.sh - Done
+
+.build_led_light: &build_led_light
+# Building led_light app - Started
+- echo Building led_light app - Started
+- echo Running idf.py
+- cd $CI_PROJECT_DIR/examples/led_light
+- idf.py build
+- echo Running make
+- rm -rf build/ sdkconfig
+- make defconfig
+- make $MAKEFLAGS
+- echo Building led_light app - Done
+# Building led_light app - Done
+# Copying led_light.bin to esp-qcloud-bins-${CI_JOB_ID}/
+- echo Copy led_light.bin to esp-qcloud-bins-${CI_JOB_ID}/
+- cp $CI_PROJECT_DIR/examples/led_light/build/led_light.bin $CI_PROJECT_DIR/esp-qcloud-bins-${CI_JOB_ID}/
+
+
+build_app:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - build
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/esp-qcloud-bins-${CI_JOB_ID}.zip
+    expire_in: 6 mos
+  script:
+    - *setup_idf
+    - for APP in $APP_BUILD; do
+    - if [[ "$APP_BUILD" == "all" || "$APP" == "led_light" ]]; then
+    - *build_led_light
+    - fi
+    - done
+    - echo Build Complete for $APP_BUILD
+    # Generating zip file for binaries generated
+    - cd $CI_PROJECT_DIR
+    - echo Generating zip file for binaries generated
+    - tar -zcvf esp-qcloud-bins-${CI_JOB_ID}.zip esp-qcloud-bins-${CI_JOB_ID}/
+  
+build_docs:
+    stage: build
+    image: $CI_DOCKER_REGISTRY/esp32-ci-env
+    tags:
+      - build
+    artifacts:
+      paths:
+        - $CI_PROJECT_DIR/esp-qcloud-docs-${CI_JOB_ID}.zip
+    script:
+      # Building sphinx docs
+      - echo Building sphinx docs
+      - cd docs
+      # unset IDF_PATH
+      - echo Unset IDF_PATH
+      - unset IDF_PATH
+      # Run requirements.txt
+      - echo Run requirements.txt
+      - python3 -m pip install -r requirements.txt
+      # Run make html
+      - echo Run make html
+      - make html
+      - cd $CI_PROJECT_DIR
+      - echo Generating tar files
+      - mkdir -p esp-qcloud-docs-${CI_JOB_ID}/html
+      - cp -rf $CI_PROJECT_DIR/docs/_build/html/ esp-qcloud-docs-${CI_JOB_ID}/html/
+      - tar -zcvf esp-qcloud-docs-${CI_JOB_ID}.zip esp-qcloud-docs-${CI_JOB_ID}
+
+# push_master_to_github:
+#   stage: deploy
+#   image: $CI_DOCKER_REGISTRY/esp32-ci-env
+#   tags:
+#     - build
+#   when: on_success
+#   dependencies: []
+#   only:
+#     - master
+#   script:
+#     - mkdir -p ~/.ssh
+#     - chmod 700 ~/.ssh
+#     - echo -n $GH_PUSH_KEY > ~/.ssh/id_rsa_base64
+#     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+#     - chmod 600 ~/.ssh/id_rsa
+#     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+#     - git remote remove github &>/dev/null || true
+#     - git remote add github git@github.com:espressif/esp-qcloud.git
+#     - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"

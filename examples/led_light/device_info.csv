@@ -1,0 +1,6 @@
+# Sample csv file
+key,type,encoding,value
+qcloud_device,namespace,,
+product_id,data,string,PRODUCT_ID
+device_name,data,string,DEVICE_NAME
+device_secret,data,string,DEVICE_SECRET
