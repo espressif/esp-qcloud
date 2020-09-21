@@ -6,30 +6,20 @@ variables:
   BATCH_BUILD: "1"
   V: "0"
   MAKEFLAGS: "-j5 --no-keep-going"
-  IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
   IDF_CI_BUILD: "1"
 
 before_script:
-  # add gitlab ssh key
-  - mkdir -p ~/.ssh
-  - chmod 700 ~/.ssh
-  - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-  - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-  - chmod 600 ~/.ssh/id_rsa
-  - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-  - git --version
+  - export IDF_PATH=~/.espressif/idf/esp-idf-v4.2
+  - cd $IDF_PATH
+  - git pull
   - git submodule update --init --recursive
-  - git clone --recursive --branch release/v4.2 --depth 1 $GITLAB_SSH_SERVER/espressif/esp-idf.git
-  - export PATH="$IDF_PATH/tools:$PATH"
-  - cd esp-idf
-  - source tools/ci/setup_python.sh
-  - source tools/ci/configure_ci_environment.sh
-  - tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
-  - cd ..
+  - ./install.sh
+  - . ./export.sh
+  - cd -
 
 .build_examples_template: &build_examples_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env:latest-3cf42c4c
   tags:
     - build
   # Artifacts are not used temporarily
