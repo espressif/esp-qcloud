@@ -1,0 +1,93 @@
+{
+	"version": "1.0",
+	"profile": {
+		"ProductId": "65BEMES9XM",
+		"CategoryId": "141"
+	},
+	"properties": [{
+		"id": "power_switch",
+		"name": "电灯开关",
+		"desc": "控制电灯开灭",
+		"required": true,
+		"mode": "rw",
+		"define": {
+			"type": "bool",
+			"mapping": {
+				"0": "关",
+				"1": "开"
+			}
+		}
+	}, {
+		"id": "saturation",
+		"name": "饱和度",
+		"desc": "",
+		"mode": "rw",
+		"define": {
+			"type": "int",
+			"min": "0",
+			"max": "100",
+			"start": "0",
+			"step": "1",
+			"unit": ""
+		},
+		"required": false
+	}, {
+		"id": "value",
+		"name": "明度",
+		"desc": "",
+		"mode": "rw",
+		"define": {
+			"type": "int",
+			"min": "0",
+			"max": "100",
+			"start": "0",
+			"step": "1",
+			"unit": ""
+		},
+		"required": false
+	}, {
+		"id": "hue",
+		"name": "色调",
+		"desc": "",
+		"mode": "rw",
+		"define": {
+			"type": "int",
+			"min": "0",
+			"max": "360",
+			"start": "0",
+			"step": "1",
+			"unit": ""
+		},
+		"required": false
+	}],
+	"events": [{
+		"id": "hardware_fault",
+		"name": "Hardware_fault",
+		"desc": "Report hardware fault",
+		"type": "fault",
+		"required": false,
+		"params": [{
+			"id": "name",
+			"name": "Name",
+			"desc": "Name like: memory,tf card, censors ...",
+			"define": {
+				"type": "string",
+				"min": "0",
+				"max": "64"
+			}
+		}, {
+			"id": "error_code",
+			"name": "Error_Code",
+			"desc": "Error code for fault",
+			"define": {
+				"type": "int",
+				"unit": "",
+				"step": "1",
+				"min": "0",
+				"max": "2000",
+				"start": "1"
+			}
+		}]
+	}],
+	"actions": []
+}

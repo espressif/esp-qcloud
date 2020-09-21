@@ -11,114 +11,125 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "string.h"
-#include <esp_log.h>
-#include <nvs_flash.h>
-#include <nvs.h>
+#include "stdio.h"
+#include "stdlib.h"
+
+#include "nvs.h"
+#include "nvs_flash.h"
+
+#include "esp_qcloud_utils.h"
+#include "esp_qcloud_storage.h"
 
 static const char *TAG = "esp_qcloud_storage";
 
-#define CREDENTIALS_NAMESPACE  "qcloud_device"
-
 esp_err_t esp_qcloud_storage_init()
 {
-    static bool s_storage_init_flag = false;
+    static bool init_flag = false;
 
-    if (s_storage_init_flag) {
-        ESP_LOGW(TAG, "ESP QCloud Storage already initialised");
-        return ESP_OK;
+    if (!init_flag) {
+        esp_err_t ret = nvs_flash_init();
+
+        if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+            // NVS partition was truncated and needs to be erased
+            // Retry nvs_flash_init
+            ESP_ERROR_CHECK(nvs_flash_erase());
+            ret = nvs_flash_init();
+        }
+
+        ESP_ERROR_CHECK(ret);
+
+        init_flag = true;
     }
 
-    /* Initialize NVS. */
-    esp_err_t err = nvs_flash_init();
-
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-
-    ESP_ERROR_CHECK(err);
-
-    err = nvs_flash_init_partition(CONFIG_ESP_QCLOUD_DEVICE_INFO_PARTITION_NAME);
-
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "NVS Flash init failed, err_str: %s", esp_err_to_name(err));
-    } else {
-        s_storage_init_flag = true;
-    }
-
-    return err;
-}
-
-void *esp_qcloud_storage_get(const char *key)
-{
-    esp_err_t err = ESP_FAIL;
-    nvs_handle handle = 0;
-    void *value = NULL;
-    size_t required_size = 0;
-
-    if ((err = nvs_open_from_partition(CONFIG_ESP_QCLOUD_DEVICE_INFO_PARTITION_NAME, CREDENTIALS_NAMESPACE,
-                                       NVS_READONLY, &handle)) != ESP_OK) {
-        ESP_LOGW(TAG, "NVS open for %s %s %s failed with error %d, str_err: %s",
-                 CONFIG_ESP_QCLOUD_DEVICE_INFO_PARTITION_NAME, CREDENTIALS_NAMESPACE, key, err, esp_err_to_name(err));
-        return NULL;
-    }
-
-    if ((err = nvs_get_blob(handle, key, NULL, &required_size)) == ESP_OK) {
-        value = calloc(required_size + 1, 1); /* + 1 for NULL termination */
-        nvs_get_blob(handle, key, value, &required_size);
-    } else if ((err = nvs_get_str(handle, key, NULL, &required_size)) == ESP_OK) {
-        value = calloc(required_size + 1, 1); /* + 1 for NULL termination */
-        nvs_get_str(handle, key, value, &required_size);
-    }
-
-    nvs_close(handle);
-    return value;
-}
-
-esp_err_t esp_qcloud_storage_set(const char *key, void *data, size_t len)
-{
-    nvs_handle handle;
-    esp_err_t err;
-
-    if ((err = nvs_open_from_partition(CONFIG_ESP_QCLOUD_DEVICE_INFO_PARTITION_NAME, CREDENTIALS_NAMESPACE,
-                                       NVS_READWRITE, &handle)) != ESP_OK) {
-        ESP_LOGE(TAG, "NVS open failed with error %d", err);
-        return ESP_FAIL;
-    }
-
-    if ((err = nvs_set_blob(handle, key, data, len)) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to write key %s with error %d size %d", key, err, len);
-        nvs_close(handle);
-        return ESP_FAIL;
-    }
-
-    nvs_commit(handle);
-    nvs_close(handle);
     return ESP_OK;
 }
 
 esp_err_t esp_qcloud_storage_erase(const char *key)
 {
-    nvs_handle handle;
-    esp_err_t err;
+    ESP_QCLOUD_PARAM_CHECK(key);
 
-    if ((err = nvs_open_from_partition(CONFIG_ESP_QCLOUD_DEVICE_INFO_PARTITION_NAME, CREDENTIALS_NAMESPACE,
-                                       NVS_READWRITE, &handle)) != ESP_OK) {
-        ESP_LOGE(TAG, "NVS open failed with error %d", err);
-        return ESP_FAIL;
-    }
+    esp_err_t ret    = ESP_OK;
+    nvs_handle handle = 0;
+
+    /**< Open non-volatile storage with a given namespace from the default NVS partition */
+    ret = nvs_open(CONFIG_QCLOUD_NVS_NAMESPACE, NVS_READWRITE, &handle);
+    ESP_QCLOUD_ERROR_CHECK(ret != ESP_OK, ret, "Open non-volatile storage");
 
     /**
-     * @brief If key is CREDENTIALS_NAMESPACE, erase all info in CREDENTIALS_NAMESPACE
+     * @brief If key is CONFIG_QCLOUD_NVS_NAMESPACE, erase all info in CONFIG_QCLOUD_NVS_NAMESPACE
      */
-    if (!strcmp(key, CREDENTIALS_NAMESPACE)) {
-        err = nvs_erase_all(handle);
+    if (!strcmp(key, CONFIG_QCLOUD_NVS_NAMESPACE)) {
+        ret = nvs_erase_all(handle);
     } else {
-        err = nvs_erase_key(handle, key);
+        ret = nvs_erase_key(handle, key);
     }
 
+    /**< Write any pending changes to non-volatile storage */
     nvs_commit(handle);
+
+    /**< Close the storage handle and free any allocated resources */
     nvs_close(handle);
-    return err;
+
+    ESP_QCLOUD_ERROR_CHECK(ret != ESP_OK && ret != ESP_ERR_NVS_NOT_FOUND,
+                    ret, "Erase key-value pair, key: %s", key);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_qcloud_storage_set(const char *key, const void *value, size_t length)
+{
+    ESP_QCLOUD_PARAM_CHECK(key);
+    ESP_QCLOUD_PARAM_CHECK(value);
+    ESP_QCLOUD_PARAM_CHECK(length > 0);
+
+    esp_err_t ret     = ESP_OK;
+    nvs_handle handle = 0;
+
+    /**< Open non-volatile storage with a given namespace from the default NVS partition */
+    ret = nvs_open(CONFIG_QCLOUD_NVS_NAMESPACE, NVS_READWRITE, &handle);
+    ESP_QCLOUD_ERROR_CHECK(ret != ESP_OK, ret, "Open non-volatile storage");
+
+    /**< set variable length binary value for given key */
+    ret = nvs_set_blob(handle, key, value, length);
+
+    /**< Write any pending changes to non-volatile storage */
+    nvs_commit(handle);
+
+    /**< Close the storage handle and free any allocated resources */
+    nvs_close(handle);
+
+    ESP_QCLOUD_ERROR_CHECK(ret != ESP_OK, ret, "Set value for given key, key: %s", key);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_qcloud_storage_get(const char *key, void *value, size_t length)
+{
+    ESP_QCLOUD_PARAM_CHECK(key);
+    ESP_QCLOUD_PARAM_CHECK(value);
+    ESP_QCLOUD_PARAM_CHECK(length > 0);
+
+    esp_err_t ret     = ESP_OK;
+    nvs_handle handle = 0;
+
+    /**< Open non-volatile storage with a given namespace from the default NVS partition */
+    ret = nvs_open(CONFIG_QCLOUD_NVS_NAMESPACE, NVS_READWRITE, &handle);
+    ESP_QCLOUD_ERROR_CHECK(ret != ESP_OK, ret, "Open non-volatile storage");
+
+    /**< get variable length binary value for given key */
+    ret = nvs_get_blob(handle, key, value, &length);
+
+    /**< Close the storage handle and free any allocated resources */
+    nvs_close(handle);
+
+    if (ret == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGD(TAG, "<ESP_ERR_NVS_NOT_FOUND> Get value for given key, key: %s", key);
+        return ESP_ERR_NVS_NOT_FOUND;
+    }
+
+    ESP_QCLOUD_ERROR_CHECK(ret != ESP_OK, ret, "Get value for given key, key: %s", key);
+
+    return ESP_OK;
 }

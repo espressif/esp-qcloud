@@ -55,12 +55,12 @@ static void initialize_console(void)
         .source_clk = UART_SCLK_REF_TICK,
     };
     /* Install UART driver for interrupt-driven reads and writes */
-    ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_QCLOUD_CONSOLE_UART_NUM,
+    ESP_ERROR_CHECK(uart_driver_install(CONFIG_QCLOUD_CONSOLE_UART_NUM,
                                         256, 0, 0, NULL, 0));
-    ESP_ERROR_CHECK(uart_param_config(CONFIG_ESP_QCLOUD_CONSOLE_UART_NUM, &uart_config));
+    ESP_ERROR_CHECK(uart_param_config(CONFIG_QCLOUD_CONSOLE_UART_NUM, &uart_config));
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_QCLOUD_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_use_driver(CONFIG_QCLOUD_CONSOLE_UART_NUM);
 
     /* Initialize the console */
     esp_console_config_t console_config = {

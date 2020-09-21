@@ -3,125 +3,115 @@ stages:
   - deploy
 
 variables:
+  BATCH_BUILD: "1"
   V: "0"
-  MAKEFLAGS: "-j8 --no-keep-going"
+  MAKEFLAGS: "-j5 --no-keep-going"
   IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
-  APP_BUILD: "all"
+  IDF_CI_BUILD: "1"
 
 before_script:
-   # add gitlab ssh key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
-    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    # Create esp-qcloud-bins-${CI_JOB_ID}/ dir (to copy binaries into for artifacts)
-    - mkdir -p $CI_PROJECT_DIR/esp-qcloud-bins-${CI_JOB_ID}
+  # add gitlab ssh key
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+  - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+  - chmod 600 ~/.ssh/id_rsa
+  - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  - git --version
+  - git submodule update --init --recursive
+  - git clone --recursive --branch release/v4.2 --depth 1 $GITLAB_SSH_SERVER/espressif/esp-idf.git
+  - export PATH="$IDF_PATH/tools:$PATH"
+  - cd esp-idf
+  - source tools/ci/setup_python.sh
+  - source tools/ci/configure_ci_environment.sh
+  - tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
+  - cd ..
 
-.setup_idf: &setup_idf
-# Checking git version
-- echo Checking git version
-- git --version
-# Cloning esp-idf - Started
-- echo Cloning esp-idf - Started
-- git clone --recursive --branch master --depth 1 $GITLAB_SSH_SERVER/idf/esp-idf.git
-- cd esp-idf
-- echo Cloning esp-idf - Done
-# Cloning esp-idf - Done
-# Running install.sh - Started
-- echo Running install.sh - Started
-- ./install.sh
-- echo Running install.sh - Done
-# Running install.sh - Done
-# Running export.sh - Started
-- echo Running export.sh - Started
-- . export.sh
-- echo Running export.sh - Done
-# Running export.sh - Done
-
-.build_led_light: &build_led_light
-# Building led_light app - Started
-- echo Building led_light app - Started
-- echo Running idf.py
-- cd $CI_PROJECT_DIR/examples/led_light
-- idf.py build
-- echo Running make
-- rm -rf build/ sdkconfig
-- make defconfig
-- make $MAKEFLAGS
-- echo Building led_light app - Done
-# Building led_light app - Done
-# Copying led_light.bin to esp-qcloud-bins-${CI_JOB_ID}/
-- echo Copy led_light.bin to esp-qcloud-bins-${CI_JOB_ID}/
-- cp $CI_PROJECT_DIR/examples/led_light/build/led_light.bin $CI_PROJECT_DIR/esp-qcloud-bins-${CI_JOB_ID}/
-
-
-build_app:
+.build_examples_template: &build_examples_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - build
-  artifacts:
-    paths:
-      - $CI_PROJECT_DIR/esp-qcloud-bins-${CI_JOB_ID}.zip
-    expire_in: 6 mos
+  # Artifacts are not used temporarily
+  # artifacts:
+  #   when: always
+  #   paths:
+  #     - $LOG_PATH
+  #   expire_in: 1 week
+  # variables:
+  #   LOG_PATH: "$CI_PROJECT_DIR/log_examples"
+
+# build_demo_make:
+#   <<: *build_examples_template
+#   script:
+#     - cd examples/led_light
+#     - make defconfig && make -j5
+#     - cd ../../
+
+build_demo_cmake:
+  <<: *build_examples_template
   script:
-    - *setup_idf
-    - for APP in $APP_BUILD; do
-    - if [[ "$APP_BUILD" == "all" || "$APP" == "led_light" ]]; then
-    - *build_led_light
-    - fi
-    - done
-    - echo Build Complete for $APP_BUILD
-    # Generating zip file for binaries generated
-    - cd $CI_PROJECT_DIR
-    - echo Generating zip file for binaries generated
-    - tar -zcvf esp-qcloud-bins-${CI_JOB_ID}.zip esp-qcloud-bins-${CI_JOB_ID}/
-  
-build_docs:
-    stage: build
-    image: $CI_DOCKER_REGISTRY/esp32-ci-env
-    tags:
-      - build
-    artifacts:
-      paths:
-        - $CI_PROJECT_DIR/esp-qcloud-docs-${CI_JOB_ID}.zip
-    script:
-      # Building sphinx docs
-      - echo Building sphinx docs
-      - cd docs
-      # unset IDF_PATH
-      - echo Unset IDF_PATH
-      - unset IDF_PATH
-      # Run requirements.txt
-      - echo Run requirements.txt
-      - python3 -m pip install -r requirements.txt
-      # Run make html
-      - echo Run make html
-      - make html
-      - cd $CI_PROJECT_DIR
-      - echo Generating tar files
-      - mkdir -p esp-qcloud-docs-${CI_JOB_ID}/html
-      - cp -rf $CI_PROJECT_DIR/docs/_build/html/ esp-qcloud-docs-${CI_JOB_ID}/html/
-      - tar -zcvf esp-qcloud-docs-${CI_JOB_ID}.zip esp-qcloud-docs-${CI_JOB_ID}
+    - cd examples/led_light
+    - idf.py set-target esp32
+    - idf.py build
+    - idf.py set-target esp32s2
+    - idf.py build
+    - cd ../../
+
+# build_docs:
+#     stage: build
+#     image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+#     tags:
+#         - build_docs
+#     artifacts:
+#         when: always
+#         paths:
+#             # English version of documentation
+#             - docs/en/sphinx-warning-log.txt
+#             - docs/en/_build/html
+#             # Chinese version of documentation
+#             - docs/zh_CN/sphinx-warning-log.txt
+#             - docs/zh_CN/_build/html
+#         expire_in: 1 week
+#     before_script:
+#       - echo "skip default before_script"
+#     script:
+#       - cd docs
+#       # make English version of documentation
+#       - cd en/
+#       - make clean && make html
+#       - cd ../
+#       # make Chinese version of documentation
+#       - cd zh_CN/
+#       - make clean && make html
+#       - cd ../
+
 
 # push_master_to_github:
 #   stage: deploy
-#   image: $CI_DOCKER_REGISTRY/esp32-ci-env
-#   tags:
-#     - build
-#   when: on_success
-#   dependencies: []
 #   only:
 #     - master
+#     - /^release\/v/
+# #  when: on_success
+#   image: $CI_DOCKER_REGISTRY/esp32-ci-env
+#   variables:
+#     GIT_STRATEGY: clone
+#     GITHUB_PUSH_REFS: refs/remotes/origin/release refs/remotes/origin/master
+#   before_script:
+#     - echo "skip default before_script"
 #   script:
 #     - mkdir -p ~/.ssh
 #     - chmod 700 ~/.ssh
-#     - echo -n $GH_PUSH_KEY > ~/.ssh/id_rsa_base64
+#     - echo -n $GH_PUSH_KEY >> ~/.ssh/id_rsa_base64
 #     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
 #     - chmod 600 ~/.ssh/id_rsa
 #     - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-#     - git remote remove github &>/dev/null || true
-#     - git remote add github git@github.com:espressif/esp-qcloud.git
-#     - git push github "${CI_COMMIT_SHA}:refs/heads/${CI_COMMIT_REF_NAME}"
+#     - git remote add github git@github.com:espressif/esp-moonlight.git
+#     # What the next line of script does: goes through the list of refs for all branches we push to github,
+#     # generates a snippet of shell which is evaluated. The snippet checks CI_BUILD_REF against the SHA
+#     # (aka objectname) at tip of each branch, and if any SHAs match then it checks out the local branch
+#     # and then pushes that ref to a corresponding github branch
+#     #
+#     # NB: In gitlab 9.x, CI_BUILD_REF was deprecated. New name is CI_COMMIT_REF. If below command suddenly
+#     # generates bash syntax errors, this is probably why.
+#     - eval $(git for-each-ref --shell bash --format 'if [ $CI_BUILD_REF == %(objectname) ]; then git checkout -B %(refname:strip=3); git push --follow-tags github %(refname:strip=3); fi;' $GITHUB_PUSH_REFS)

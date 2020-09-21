@@ -1,4 +1,4 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __ESP_QCLOUD_CONSOLE_DEBUG_H__
-#define __ESP_QCLOUD_CONSOLE_DEBUG_H__
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +27,7 @@ extern "C" {
  *
  * @return
  *     - ESP_OK
- *     - ESP_QCLOUD_FAIL
+ *     - ESP_FAIL
  */
 esp_err_t esp_qcloud_console_init(void);
 
@@ -38,7 +37,7 @@ esp_err_t esp_qcloud_console_init(void);
  *
  * @return
  *     - ESP_OK
- *     - ESP_QCLOUD_FAIL
+ *     - ESP_FAIL
  */
 esp_err_t esp_qcloud_console_deinit(void);
 
@@ -56,4 +55,3 @@ void esp_qcloud_commands_register_common(void);
 #ifdef __cplusplus
 }
 #endif /**< _cplusplus */
-#endif /**< __ESP_QCLOUD_CONSOLE_DEBUG_H__ */

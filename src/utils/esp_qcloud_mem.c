@@ -44,10 +44,10 @@ void esp_qcloud_mem_add_record(void *ptr, int size, const char *tag, int line)
              ptr, (int)size, esp_get_free_heap_size());
 
     if (!g_mem_info) {
-        g_mem_info = calloc(ESP_QCLOUD_MEM_DBG_INFO_MAX, sizeof(esp_qcloud_mem_info_t));
+        g_mem_info = calloc(QCLOUD_MEM_DBG_INFO_MAX, sizeof(esp_qcloud_mem_info_t));
     }
 
-    if (g_mem_count >= ESP_QCLOUD_MEM_DBG_INFO_MAX) {
+    if (g_mem_count >= QCLOUD_MEM_DBG_INFO_MAX) {
         ESP_LOGE(TAG, "The buffer space of the memory record is full");
         esp_qcloud_mem_print_record();
         return ;
@@ -59,7 +59,7 @@ void esp_qcloud_mem_add_record(void *ptr, int size, const char *tag, int line)
 
     xSemaphoreTake(g_mem_info_lock, portMAX_DELAY);
 
-    for (int i = 0; i < ESP_QCLOUD_MEM_DBG_INFO_MAX; i++) {
+    for (int i = 0; i < QCLOUD_MEM_DBG_INFO_MAX; i++) {
         if (!g_mem_info[i].size) {
             g_mem_info[i].ptr  = ptr;
             g_mem_info[i].tag  = tag;
@@ -83,7 +83,7 @@ void esp_qcloud_mem_remove_record(void *ptr, const char *tag, int line)
     ESP_LOGV(TAG, "<%s : %d> Free ptr: %p, heap free: %d", tag, line, ptr, esp_get_free_heap_size());
 
     if (!g_mem_info) {
-        g_mem_info = calloc(ESP_QCLOUD_MEM_DBG_INFO_MAX, sizeof(esp_qcloud_mem_info_t));
+        g_mem_info = calloc(QCLOUD_MEM_DBG_INFO_MAX, sizeof(esp_qcloud_mem_info_t));
     }
 
     if (!g_mem_info_lock) {
@@ -92,7 +92,7 @@ void esp_qcloud_mem_remove_record(void *ptr, const char *tag, int line)
 
     xSemaphoreTake(g_mem_info_lock, portMAX_DELAY);
 
-    for (int i = 0; i < ESP_QCLOUD_MEM_DBG_INFO_MAX; i++) {
+    for (int i = 0; i < QCLOUD_MEM_DBG_INFO_MAX; i++) {
         if (g_mem_info[i].size && g_mem_info[i].ptr == ptr) {
             g_mem_info[i].size = 0;
             g_mem_count--;
@@ -107,7 +107,7 @@ void esp_qcloud_mem_print_record(void)
 {
     size_t total_size = 0;
 
-    if (!ESP_QCLOUD_MEM_DEBUG) {
+    if (!QCLOUD_MEM_DEBUG) {
         ESP_LOGW(TAG, "Please enable memory record");
     }
 
@@ -116,7 +116,7 @@ void esp_qcloud_mem_print_record(void)
         return ;
     }
 
-    for (int i = 0; i < ESP_QCLOUD_MEM_DBG_INFO_MAX; i++) {
+    for (int i = 0; i < QCLOUD_MEM_DBG_INFO_MAX; i++) {
         if (g_mem_info[i].size) {
             ESP_LOGI(TAG, "(%d) <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
                      g_mem_info[i].ptr, g_mem_info[i].size);
