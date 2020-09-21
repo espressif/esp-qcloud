@@ -1,139 +1,116 @@
-menu "ESP QCloud Config"
-    config ESP_QCLOUD_TASK_STACK
-        int "ESP QCloud Core Task stack"
-        default 4096
-        help
-            Stack size for the ESP QCloud Core Task.
-
-    config ESP_QCLOUD_TASK_PRIORITY
-        int "ESP QCloud Core Task priority"
-        default 5
-        help
-            Priority for the ESP QCloud Core Task. Not recommended to be changed
-            unless you really need it.
-
-    config ESP_QCLOUD_MAX_NODE_CONFIG_SIZE
-        int "Maximum Node Config size"
-        default 2048
-        range 512 65536
-        help
-            Maximum size of the payload for reporting Node configuration.
-
-    config ESP_QCLOUD_MAX_PARAM_DATA_SIZE
-        int "Maximum Parameters' data size"
-        default 1024
-        range 64 8192
-        help
-            Maximum size of the payload for reporting parameter values.
-
-    config ESP_QCLOUD_DEVICE_INFO_PARTITION_NAME
-        string "ESP QCloud Factory Partition Name"
-        default "device_info"
-        help
-            Factory NVS Partition name which will have the MQTT connectivity credentials.
-
-    config QCLOUD_MQTT_PERSISTENT_SESSION
-        bool "Use Persisent MQTT sessions"
+menu "ESP QCloud Configuration"
+    config QCLOUD_MASS_MANUFACTURE
+        bool "ESP Qcloud Mass Manufacture"
         default n
         help
-            Use persistent MQTT sessions. This improves reliability as QOS1 messages missed
-            out due to some network issue are received after the MQTT reconnects. The broker
-            caches messages for a period of upto 1hour. However, a side-effect of this is that
-            messages can be received at unexpected time. Enable this option only if it suits
-            your use case. Please read MQTT specs to understand more about persistent sessions
-            and the cleanSession flag.
+            Write authentication information through flash tool
 
-    choice ESP_QCLOUD_MQTT_PORT
-        bool "MQTT Port"
-        default ESP_QCLOUD_MQTT_PORT_443
-        help
-            ESP QCloud MQTT Broker can be connected to either on Port 8883 or port 443.
-            Port 443 is recommended as it is generally not blocked by any firewalls,
-            since it is standard HTTPS port.
+        config QCLOUD_FACTRY_PARTITION_NAME
+            depends on QCLOUD_MASS_MANUFACTURE
+            string "ESP QCloud Factory Partition Name"
+            default "fctry"
+            help
+                Factory NVS Partition name which will have the Qcloud IOTHUB connectivity credentials.
 
-        config ESP_QCLOUD_MQTT_PORT_443
-            bool "443"
-        config ESP_QCLOUD_MQTT_PORT_8883
-            bool "8883"
-    endchoice
+        config QCLOUD_FACTRY_PARTITION_NAMESPACE
+            depends on QCLOUD_MASS_MANUFACTURE
+            string "ESP QCloud Factory Partition NVS Namespace"
+            default "qcloud-key"
+            help
+                Factory NVS Partition name which will have the Qcloud IOTHUB connectivity credentials.
 
-    config ESP_QCLOUD_MQTT_PORT
-        int
-        default 1 if ESP_QCLOUD_MQTT_PORT_443
-        default 2 if ESP_QCLOUD_MQTT_PORT_8883
-
-    config ESP_QCLOUD_SNTP_SERVER_NAME
-        string "ESP QCloud SNTP Server Name"
-        default "pool.ntp.org"
-        help
-            Default SNTP Server which is used for time synchronization.
-
-    choice ESP_QCLOUD_CONSOLE_UART_NUM
-        prompt "UART for console input"
-        default ESP_QCLOUD_CONSOLE_UART_NUM_0
-        help
-            UART to be selected for serial console.
-
-        config ESP_QCLOUD_CONSOLE_UART_NUM_0
-            bool "UART0"
-        config ESP_QCLOUD_CONSOLE_UART_NUM_1
-            bool "UART1"
-    endchoice
-
-    config ESP_QCLOUD_CONSOLE_UART_NUM
-        int
-        default 0 if ESP_QCLOUD_CONSOLE_UART_NUM_0
-        default 1 if ESP_QCLOUD_CONSOLE_UART_NUM_1
+        config QCLOUD_PRODUCT_ID
+            depends on !QCLOUD_MASS_MANUFACTURE
+            string "Product ID"
+            default "PRODUCT_ID"
+            help
+                Set the Product ID.
+            
+        config QCLOUD_DEVICE_NAME
+            depends on !QCLOUD_MASS_MANUFACTURE
+            string "Device Name"
+            default "DEVICE_NAME"
+            help
+                Set the Device Name.
+            
+        config QCLOUD_DEVICE_SECRET
+            depends on !QCLOUD_MASS_MANUFACTURE
+            string "Device Secret"
+            default "DEVICE_SECRET"
+            help
+                Set the Device Secret.
 
     menu "ESP QCloud OTA Config"
-
-        config ESP_QCLOUD_OTA_AUTOFETCH
-            bool "Auto Fetch OTA"
-            default y
-            help
-                Applicable only for OTA using Topics.
-                Fetch the OTA (i.e. get the URL and other details) by actively sending an
-                OTA fetch request to ESP QCloud Cloud. If this is disabled, the node
-                will stay subscribed to the OTA Topics, but will get the information only
-                if someone explicitly triggers it.
-
-        config ESP_QCLOUD_OTA_AUTOFETCH_PERIOD
-            int "OTA Auto Fetch Period"
-            default 0
-            range 0 168
-            depends on ESP_QCLOUD_OTA_AUTOFETCH
-            help
-                Periodically send an OTA fetch request. If set to 0, the request will be sent only once,
-                when the node connects to the ESP QCloud Cloud first time after a boot.
-                Else, this defines the period (in hours) for the periodic fetch request.
-
-        config ESP_QCLOUD_SKIP_COMMON_NAME_CHECK
-            bool "Skip server certificate CN field check"
-            default n
-            help
-                This allows you to skip the validation of OTA server certificate CN field.
-
-        config ESP_QCLOUD_SKIP_VERSION_CHECK
+        config QCLOUD_SKIP_VERSION_CHECK
             bool "Skip firmware version check"
-            default n
+            default y
             help
                 This allows you to skip the firmware version check. Useful during development,
                 but not for production.
 
-        config ESP_QCLOUD_SKIP_PROJECT_NAME_CHECK
+        config QCLOUD_SKIP_PROJECT_NAME_CHECK
             bool "Skip project name check"
             default n
             help
                 This allows you to skip the project name check.
-
     endmenu
 
-    menu "ESP QCloud debug Config"
-        config QCLOUD_LOG_PARTITION_LABEL
-        string "Store log info partition label"
-        default "log_info"
-        help
-            Store log info partition label.
+    menu "Qcloud utils"
+        choice QCLOUD_MEM_ALLOCATION_LOCATION
+            prompt "The memory location allocated by QCLOUD_MALLOC QCLOUD_CALLOC and QCLOUD_REALLOC"
+            help 
+                choice where to allocate memory, can be SPIRAM or default
+
+            config QCLOUD_MEM_ALLOCATION_DEFAULT
+                bool "default allocation strategy"
+            config QCLOUD_MEM_ALLOCATION_SPIRAM
+                depends on ESP32S2_SPIRAM_SUPPORT || ESP32_SPIRAM_SUPPORT
+                bool "allocate memory in SPIRAM"
+        endchoice
+            
+        config QCLOUD_MEM_DEBUG
+            bool "Memory debug"
+            default y
+            help
+                Memory debug.
+
+        config QCLOUD_MEM_DBG_INFO_MAX
+            int "QCLOUD Memory debug record max."
+            default 128
+            help
+                Config QCLOUD Memory debug record max.
+
+        config QCLOUD_NVS_NAMESPACE
+            string "Namespace where data is stored in nvs"
+            default "qcloud_app"
+            help
+                Namespace where data is stored in nvs.
+
+        config QCLOUD_REBOOT_UNBROKEN_INTERVAL_TIMEOUT
+            int "Continuous reboot interval(ms)"
+            default 3000
+            help
+            Continuous reboot interval.
+
+        config QCLOUD_REBOOT_UNBROKEN_FALLBACK_COUNT
+            int "Continuous restart triggers version rollback"
+            default 30
+            help
+            Continuous restart triggers version rollback.
+    endmenu
+
+    menu "ESP QCloud Log Config"
+        config QCLOUD_LOG_PARTITION_LABEL_DATA
+            string "Store log info partition label"
+            default "log_info"
+            help
+                Store log info partition label.
+            
+        config QCLOUD_LOG_PARTITION_LABEL_NVS
+            string "Store log status partition label"
+            default "log_status"
+            help
+                Store log status partition label.
 
         config QCLOUD_LOG_FILE_MAX_SIZE
             int "Output the save the file size of the log"
@@ -154,7 +131,23 @@ menu "ESP QCloud Config"
             default n
             help
                 Output the `printf` information of the QCLOUD module
-        
     endmenu
+
+    choice QCLOUD_CONSOLE_UART_NUM
+        prompt "UART for console input"
+        default QCLOUD_CONSOLE_UART_NUM_0
+        help
+            UART to be selected for serial console.
+
+        config QCLOUD_CONSOLE_UART_NUM_0
+            bool "UART0"
+        config QCLOUD_CONSOLE_UART_NUM_1
+            bool "UART1"
+    endchoice
+
+    config QCLOUD_CONSOLE_UART_NUM
+        int
+        default 0 if QCLOUD_CONSOLE_UART_NUM_0
+        default 1 if QCLOUD_CONSOLE_UART_NUM_1
 
 endmenu

@@ -13,10 +13,10 @@
 #include "esp_qcloud_log.h"
 #include "esp_qcloud_console.h"
 #include "esp_qcloud_storage.h"
-#include <esp_qcloud_iothub.h>
-#include <esp_qcloud_prov.h>
+#include "esp_qcloud_iothub.h"
+#include "esp_qcloud_prov.h"
 
-#include "app_priv.h"
+#include "light_driver.h"
 
 static const char *TAG = "app_main";
 
@@ -24,13 +24,13 @@ static const char *TAG = "app_main";
 static esp_err_t light_get_param(const char *id, esp_qcloud_param_val_t *val)
 {
     if (!strcmp(id, "power_switch")) {
-        val->b = app_light_get_power();
+        val->b = light_driver_get_switch();
     } else if (!strcmp(id, "value")) {
-        val->i = app_light_get_value();
+        val->i = light_driver_get_value();
     } else if (!strcmp(id, "hue")) {
-        val->i = app_light_get_hue();
+        val->i = light_driver_get_hue();
     } else if (!strcmp(id, "saturation")) {
-        val->i = app_light_get_saturation();
+        val->i = light_driver_get_saturation();
     }
 
     ESP_LOGI(TAG, "Report id: %s, val: %d", id, val->i);
@@ -45,13 +45,13 @@ static esp_err_t light_set_param(const char *id, const esp_qcloud_param_val_t *v
     ESP_LOGI(TAG, "Received id: %s, val: %d", id, val->i);
 
     if (!strcmp(id, "power_switch")) {
-        err = app_light_set_power(val->b);
+        err = light_driver_set_switch(val->b);
     } else if (!strcmp(id, "value")) {
-        err = app_light_set_value(val->i);
+        err = light_driver_set_value(val->i);
     } else if (!strcmp(id, "hue")) {
-        err = app_light_set_hue(val->i);
+        err = light_driver_set_hue(val->i);
     } else if (!strcmp(id, "saturation")) {
-        err = app_light_set_saturation(val->i);
+        err = light_driver_set_saturation(val->i);
     } else {
         ESP_LOGW(TAG, "This parameter is not supported");
     }
@@ -64,8 +64,18 @@ static void event_handler(void *arg, esp_event_base_t event_base,
                           int event_id, void *event_data)
 {
     switch (event_id) {
-        case QCLOUD_EVENT_INIT_DONE:
-            ESP_LOGI(TAG, "QCloud Initialised.");
+        case QCLOUD_EVENT_IOTHUB_INIT_DONE:
+            ESP_LOGI(TAG, "QCloud Initialised");
+            break;
+
+        case QCLOUD_EVENT_IOTHUB_BOND_DEVICE:
+            ESP_LOGI(TAG, "Device binding successful");
+            break;
+
+        case QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE:
+            ESP_LOGW(TAG, "Device unbound with iothub");
+            esp_qcloud_storage_erase(CONFIG_QCLOUD_NVS_NAMESPACE);
+            esp_restart();
             break;
 
         default:
@@ -73,99 +83,128 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
+static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
+{
+    ESP_QCLOUD_PARAM_CHECK(wifi_cfg);
+
+    if (esp_qcloud_storage_get("wifi_config", wifi_cfg, sizeof(wifi_config_t)) == ESP_OK) {
+        return ESP_OK;
+    }
+
+    /**< The yellow light flashes to indicate that the device enters the state of configuring the network */
+    light_driver_breath_start(128, 128, 0); /**< yellow blink */
+
+    /**< Note: Smartconfig and softapconfig working at the same time will affect the configure network performance */
+
+#ifdef CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG
+    char softap_ssid[32 + 1] = CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG_SSID;
+    // uint8_t mac[6] = {0};
+    // ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
+    // sprintf(softap_ssid, "tcloud_%s_%02x%02x", light_driver_get_type(), mac[4], mac[5]);
+
+    esp_qcloud_prov_softapconfig_start(SOFTAPCONFIG_TYPE_ESPRESSIF_TENCENT,
+                                       softap_ssid,
+                                       CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG_PASSWORD);
+    esp_qcloud_prov_print_wechat_qr(softap_ssid, "softap");
+#endif
+
+#ifdef CONFIG_LIGHT_PROVISIONING_SMARTCONFIG
+    esp_qcloud_prov_smartconfig_start(SC_TYPE_ESPTOUCH_AIRKISS);
+#endif
+
+    ESP_ERROR_CHECK(esp_qcloud_prov_wait(wifi_cfg, wait_ms));
+
+#ifdef CONFIG_LIGHT_PROVISIONING_SMARTCONFIG
+    esp_qcloud_prov_smartconfig_stop();
+#endif
+
+#ifdef CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG
+    esp_qcloud_prov_softapconfig_stop();
+#endif
+
+    /**< Store the configure of the device */
+    esp_qcloud_storage_set("wifi_config", wifi_cfg, sizeof(wifi_config_t));
+
+    /**< Configure the network successfully to stop the light flashing */
+    light_driver_breath_stop(); /**< stop blink */
+
+    return ESP_OK;
+}
+
 void app_main()
 {
-    ESP_ERROR_CHECK(esp_qcloud_storage_init());
-
     /**
      * @brief Add debug function, you can use serial command and remote debugging.
      */
     esp_qcloud_log_config_t log_config = {
         .log_level_uart = ESP_LOG_INFO,
     };
-    esp_log_level_set("*", ESP_LOG_INFO);
     ESP_ERROR_CHECK(esp_qcloud_log_init(&log_config));
+
+#ifdef CONFIG_LIGHT_DEBUG
     ESP_ERROR_CHECK(esp_qcloud_console_init());
+    esp_qcloud_print_system_info(10000);
+#endif /**< CONFIG_LIGHT_DEBUG */
 
     /**
      * @brief Initialize Application specific hardware drivers and set initial state.
      */
-    app_driver_init();
-    app_light_get_power(DEFAULT_POWER);
-    app_light_get_hue(DEFAULT_HUE);
-    app_light_get_saturation(DEFAULT_SATURATION);
-    app_light_set_value(DEFAULT_VALUE);
+    light_driver_config_t driver_cfg = COFNIG_LIGHT_TYPE_DEFAULT();
+    ESP_ERROR_CHECK(light_driver_init(&driver_cfg));
 
-    /* Initialize Wi-Fi. Note that, this should be called before esp_qcloud_wifi_start()
-     */
-    ESP_ERROR_CHECK(esp_qcloud_wifi_init());
-    ESP_ERROR_CHECK(esp_event_handler_register(QCLOUD_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    /**< Continuous power off and restart more than five times to reset the device */
+    if (esp_qcloud_reboot_unbroken_count() >= CONFIG_LIGHT_REBOOT_UNBROKEN_COUNT_RESET) {
+        ESP_LOGW(TAG, "Erase information saved in flash");
+        esp_qcloud_storage_erase(CONFIG_QCLOUD_NVS_NAMESPACE);
+    } else if (esp_qcloud_reboot_is_exception(false)) {
+        ESP_LOGE(TAG, "The device has been restarted abnormally");
+#ifdef CONFIG_LIGHT_DEBUG
+        light_driver_breath_start(255, 0, 0); /**< red blink */
+#else
+        ESP_ERROR_CHECK(light_driver_set_switch(true));
+#endif /**< CONFIG_LIGHT_DEBUG */
+    } else {
+        ESP_ERROR_CHECK(light_driver_set_switch(true));
+    }
 
     /*
      * @breif Create a device through the server and obtain configuration parameters
      *        server: https://console.cloud.tencent.com/iotexplorer
      */
-#ifdef CONFIG_QCLOUD_MASS_PRODUCTION
-    /**
-     * @brief Read device configuration information through flash
-     *        1. Configure device information via device_info.csv
-     *        2. Generate device_info.bin, use the following command:
-     *          python $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate device_info.csv device_info.bin 0x8000 --version 2
-     *        3. Burn device_info.bin to flash
-     *          python $IDF_PATH/components/esptool_py/esptool/esptool.py write_flash 0x15000 device_info.bin
-     */
-    ESP_ERROR_CHECK(esp_qcloud_create_device(esp_qcloud_storage_get("product_id"),
-                    esp_qcloud_storage_get("device_name")));
-    ESP_ERROR_CHECK(esp_qcloud_device_secret(esp_qcloud_storage_get("device_secret")));
-#else
-    /**
-     * @brief Read device configuration information through sdkconfig.h
-     *        1. Configure device information via `idf.py menuconfig`, Menu path: (Top) -> Example Configuration
-     *
-     */
-    ESP_ERROR_CHECK(esp_qcloud_create_device(CONFIG_QCLOUD_PRODUCT_ID, CONFIG_QCLOUD_DEVICE_NAME));
-    ESP_ERROR_CHECK(esp_qcloud_device_secret(CONFIG_QCLOUD_DEVICE_SECRET));
-#endif
-
+    /**< Create and configure device authentication information */
+    ESP_ERROR_CHECK(esp_qcloud_create_device());
     /**< Configure the version of the device, and use this information to determine whether to OTA */
-    ESP_ERROR_CHECK(esp_qcloud_device_version("0.0.1"));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_fw_version("0.0.1"));
     /**< Register the properties of the device */
-    ESP_ERROR_CHECK(esp_qcloud_device_param("power_switch", esp_qcloud_bool(DEFAULT_POWER)));
-    ESP_ERROR_CHECK(esp_qcloud_device_param("hue", esp_qcloud_int(DEFAULT_HUE)));
-    ESP_ERROR_CHECK(esp_qcloud_device_param("saturation", esp_qcloud_int(DEFAULT_SATURATION)));
-    ESP_ERROR_CHECK(esp_qcloud_device_param("value", esp_qcloud_int(DEFAULT_VALUE)));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_param("power_switch", QCLOUD_VAL_TYPE_BOOLEAN));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_param("hue", QCLOUD_VAL_TYPE_INTEGER));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_param("saturation", QCLOUD_VAL_TYPE_INTEGER));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_param("value", QCLOUD_VAL_TYPE_INTEGER));
     /**< The processing function of the communication between the device and the server */
-    ESP_ERROR_CHECK(esp_qcloud_device_handle(light_get_param, light_set_param));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_cb(light_get_param, light_set_param));
 
     /**
-     * @brief Configure router and cloud binding information
+     * @brief Initialize Wi-Fi.
      */
-    char *token             = esp_qcloud_storage_get("token");
-    wifi_config_t *wifi_cfg = esp_qcloud_storage_get("wifi_config");
+    ESP_ERROR_CHECK(esp_qcloud_wifi_init());
+    ESP_ERROR_CHECK(esp_event_handler_register(QCLOUD_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 
-    if (!token || !wifi_cfg) {
-        esp_qcloud_prov_softap_start("tcloud_XXX", NULL, NULL);
-        ESP_ERROR_CHECK(esp_qcloud_prov_wait(&wifi_cfg, &token, portMAX_DELAY));
-        esp_qcloud_prov_softap_stop();
-
-        esp_qcloud_storage_set("token", token, strlen(token) + 1);
-        esp_qcloud_storage_set("wifi_config", wifi_cfg, sizeof(wifi_config_t));
-    }
+    /**
+     * @brief Get the router configuration
+     */
+    wifi_config_t wifi_cfg = {0};
+    ESP_ERROR_CHECK(get_wifi_config(&wifi_cfg, portMAX_DELAY));
 
     /**
      * @brief Connect to router
      */
-    ESP_ERROR_CHECK(esp_qcloud_wifi_start(wifi_cfg));
+    ESP_ERROR_CHECK(esp_qcloud_wifi_start(&wifi_cfg));
     ESP_ERROR_CHECK(esp_qcloud_timesync_start());
 
     /**
      * @brief Connect to Tencent Cloud Iothub
      */
     ESP_ERROR_CHECK(esp_qcloud_iothub_init());
-    ESP_ERROR_CHECK(esp_qcloud_iothub_bind(token));
-    ESP_ERROR_CHECK(esp_qcloud_iothub_ota_enable());
     ESP_ERROR_CHECK(esp_qcloud_iothub_start());
-
-    ESP_QCLOUD_FREE(token);
-    ESP_QCLOUD_FREE(wifi_cfg);
+    ESP_ERROR_CHECK(esp_qcloud_iothub_ota_enable());
 }

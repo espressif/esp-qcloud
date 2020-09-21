@@ -33,6 +33,7 @@
 #include "mbedtls/error.h"
 #include "esp_qcloud_utils.h"
 #include "esp_qcloud_log.h"
+#include "esp_qcloud_storage.h"
 
 ESP_EVENT_DEFINE_BASE(QCLOUD_EVENT);
 
@@ -152,20 +153,6 @@ static esp_err_t esp_qcloud_iothub_reply(const char *method, const char *token, 
 
     publish_data = cJSON_PrintUnformatted(json_publish_data);
     cJSON_Delete(json_publish_data);
-
-#if 0
-
-    if (data->child) {
-        char *json_str = cJSON_PrintUnformatted(data);
-        publish_len = asprintf(&publish_data, "{\"method\":\"%s\",\"code\":%d,\"status\":\"%s\",\"clientToken\":\"%s\",\"data\":%s}",
-                               method, reply_code, esp_err_to_name(reply_code), token, json_str);
-        ESP_QCLOUD_FREE(json_str);
-    } else {
-        publish_len = asprintf(&publish_data, "{\"method\":\"%s\",\"code\":%d,\"status\":\"%s\",\"clientToken\":\"%s\"}",
-                               method, reply_code, esp_err_to_name(reply_code), token);
-    }
-
-#endif
 
     err = esp_qcloud_mqtt_publish(publish_topic, publish_data, strlen(publish_data));
     ESP_QCLOUD_ERROR_GOTO(err != ESP_OK, EXIT, "<%s> Publispublish, topic: $thing/up/property/65BEMES9XM/dev001, data: h to %s, data: %s",
@@ -377,8 +364,6 @@ EXIT:
     return err;
 }
 
-
-/* Start the ESP QCloud Core Task */
 esp_err_t esp_qcloud_iothub_init()
 {
     esp_err_t err = ESP_FAIL;
@@ -392,16 +377,16 @@ esp_err_t esp_qcloud_iothub_init()
     err = esp_qcloud_mqtt_init(&mqtt_cfg);
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_mqtt_init");
 
-    ESP_LOGI(TAG, "QCloud iothub mqtt config:");
-    ESP_LOGI(TAG, "qcloud_uri: %s", mqtt_cfg.host);
-    ESP_LOGI(TAG, "client_id: %s", mqtt_cfg.client_id);
-    ESP_LOGI(TAG, "username: %s", mqtt_cfg.username);
-    ESP_LOGI(TAG, "password: %s", mqtt_cfg.password);
+    ESP_LOGD(TAG, "QCloud iothub mqtt config:");
+    ESP_LOGD(TAG, "qcloud_uri: %s", mqtt_cfg.host);
+    ESP_LOGD(TAG, "client_id: %s", mqtt_cfg.client_id);
+    ESP_LOGD(TAG, "username: %s", mqtt_cfg.username);
+    ESP_LOGD(TAG, "password: %s", mqtt_cfg.password);
 
     err = esp_qcloud_mqtt_connect();
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_mqtt_connect");
 
-    esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_INIT_DONE, NULL, 0, portMAX_DELAY);
+    esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_INIT_DONE, NULL, 0, portMAX_DELAY);
 
     return ESP_OK;
 }
@@ -409,7 +394,23 @@ esp_err_t esp_qcloud_iothub_init()
 static void esp_qcloud_iothub_bond_callback(const char *topic, void *payload, size_t payload_len, void *priv_data)
 {
     ESP_LOGI("TAG", "bond_callback: topic: %s, payload: %.*s", topic, payload_len, (char *)payload);
-    xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BOND_RELAY);
+
+    cJSON *root_json  = cJSON_Parse(payload);
+    ESP_QCLOUD_ERROR_GOTO(!root_json, EXIT, "The data format is wrong and cannot be parsed");
+
+    const char *method = cJSON_GetObjectItem(root_json, "method")->valuestring;
+    ESP_QCLOUD_ERROR_GOTO(!method, EXIT, "The data format is wrong, the 'clientToken' field is not included");
+
+    if (!strcmp(method, "unbind_device")) {
+        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE, NULL, 0, portMAX_DELAY);
+    } else if (!strcmp(method, "app_bind_token_reply")) {
+        xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BOND_RELAY);
+        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOND_DEVICE, NULL, 0, portMAX_DELAY);
+        esp_qcloud_storage_erase("token");
+    }
+
+EXIT:
+    cJSON_Delete(root_json);
 }
 
 esp_err_t esp_qcloud_iothub_bind(const char *token)
@@ -456,7 +457,11 @@ esp_err_t esp_qcloud_iothub_bind(const char *token)
 esp_err_t esp_qcloud_iothub_start()
 {
     esp_err_t err = ESP_FAIL;
-    ESP_LOGI(TAG, "Starting QCloud Core Task");
+    char token[AUTH_TOKEN_MAX_SIZE] = {0};
+
+    if (esp_qcloud_storage_get("token", token, AUTH_TOKEN_MAX_SIZE) == ESP_OK) {
+        esp_qcloud_iothub_bind(token);
+    }
 
     err = esp_qcloud_iothub_register_log();
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_iothub_report_property");

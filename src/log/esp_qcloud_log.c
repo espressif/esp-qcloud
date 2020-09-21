@@ -77,8 +77,10 @@ static ssize_t esp_qcloud_log_vprintf(const char *fmt, va_list vp)
      * @brief Remove the header and tail that appear in the string in the log
      *
      */
-    if (log_info->data[0] == '\033' && log_info->size > 7) {
-        switch (log_info->data[7]) {
+    if (log_info->size > 7) {
+        uint8_t log_level_index = (log_info->data[0] == '\033') ? 7 : 0;
+
+        switch (log_info->data[log_level_index]) {
             case 'E':
                 log_info->level = ESP_LOG_ERROR;
                 break;
@@ -125,15 +127,19 @@ static void esp_qcloud_log_send_task(void *arg)
             continue;
         }
 
-        if (log_info->level <= g_log_config->log_level_flash) {
+
+        if (g_log_config->log_level_flash != ESP_LOG_NONE
+                && log_info->level <= g_log_config->log_level_flash) {
             esp_qcloud_log_flash_write(log_info->data, log_info->size, log_info->level, &log_info->time); /**< Write log data to flash */
         }
 
-        if (log_info->level <= g_log_config->log_level_iothub) {
-            esp_qcloud_log_iothub_write(log_info->level, &log_info->time, log_info->data, log_info->size); /**< Write log data to iothub */
+        if (g_log_config->log_level_iothub != ESP_LOG_NONE
+                && log_info->level <= g_log_config->log_level_iothub) {
+            esp_qcloud_log_iothub_write(log_info->data, log_info->size, log_info->level, &log_info->time); /**< Write log data to iothub */
         }
 
-        if (log_info->level <= g_log_config->log_level_local) {
+        if (g_log_config->log_level_local != ESP_LOG_NONE
+                && log_info->level <= g_log_config->log_level_local) {
             // esp_qcloud_debug_local_write(log_data, log_size);  /**< Write log data to local */
         }
 
@@ -167,7 +173,7 @@ esp_err_t esp_qcloud_log_init(const esp_qcloud_log_config_t *config)
                             NULL, CONFIG_QCLOUD_TASK_PINNED_TO_CORE);
 
 
-    ESP_LOGW(TAG, "Mdebug log initialized successfully");
+    ESP_LOGI(TAG, "log initialized successfully");
 
     g_log_init_flag = true;
 

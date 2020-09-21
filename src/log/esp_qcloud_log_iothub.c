@@ -48,7 +48,7 @@ typedef struct {
 
 #define MAX_HTTP_OUTPUT_BUFFER 128
 
-esp_err_t esp_qcloud_log_iothub_write(esp_log_level_t log_level, const struct tm *log_time, const char *data, size_t size)
+esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_level_t log_level, const struct tm *log_time)
 {
     ESP_QCLOUD_PARAM_CHECK(data);
     ESP_QCLOUD_PARAM_CHECK(size);

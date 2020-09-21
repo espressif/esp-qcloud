@@ -43,7 +43,6 @@ esp_err_t esp_qcloud_timesync_start()
     return ESP_OK;
 }
 
-
 bool esp_qcloud_timesync_check(void)
 {
     time_t now;
@@ -56,7 +55,7 @@ bool esp_qcloud_timesync_check(void)
     return false;
 }
 
-esp_err_t esp_qcloud_timesync_wait(uint32_t ticks_to_wait)
+esp_err_t esp_qcloud_timesync_wait(TickType_t ticks_to_wait)
 {
     if (!g_init_done) {
         ESP_LOGW(TAG, "Time sync not initialised using 'esp_qcloud_timesync_start'");

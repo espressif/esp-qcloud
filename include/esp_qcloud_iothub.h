@@ -28,13 +28,28 @@ extern "C"
 {
 #endif
 
+/**
+ * @brief QCloud Length of configuration information
+ */
+#define CLIENT_ID_MAX_SIZE               (80)  /**< MAX size of client ID */
+#define PRODUCT_ID_SIZE                  (10)  /**< MAX size of product ID */
+#define PRODUCT_SECRET_MAX_SIZE          (32)  /**< MAX size of product secret */
+#define DEVICE_NAME_MAX_SIZE             (48)  /**< MAX size of device name */
+#define DEVICE_SECRET_SIZE               (24)  /**< MAX size of device secret */
+#define DEVICE_CERT_FILE_NAME_MAX_SIZE   (128) /**< MAX size of device cert file name */
+#define DEVICE_CERT_FILE_NAME_MAX_SIZE   (128) /**< MAX size of device cert file name */
+
+#define AUTH_TOKEN_MAX_SIZE              (32)  /**< MAX size of auth token */
+
 /**< ESP QCloud Event Base */
 ESP_EVENT_DECLARE_BASE(QCLOUD_EVENT);
 
 /**< ESP QCloud Events */
 typedef enum {
-    QCLOUD_EVENT_INIT_DONE = 1,    /**< QCloud Core Initialisation Done */
-    QCLOUD_EVENT_DEBUG_FLASH_FULL,
+    QCLOUD_EVENT_IOTHUB_INIT_DONE = 1,    /**< QCloud Core Initialisation Done */
+    QCLOUD_EVENT_IOTHUB_BOND_DEVICE,    /**< QCloud Core Initialisation Done */
+    QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE,    /**< QCloud Core Initialisation Done */
+    QCLOUD_EVENT_LOG_FLASH_FULL,
 } esp_qcloud_event_t;
 
 
@@ -69,20 +84,19 @@ typedef struct {
 typedef esp_err_t (*esp_qcloud_get_param_t)(const char *id, esp_qcloud_param_val_t *val);
 typedef esp_err_t (*esp_qcloud_set_param_t)(const char *id, const esp_qcloud_param_val_t *val);
 
-esp_err_t esp_qcloud_device_handle(const esp_qcloud_get_param_t get_param_cb,
+esp_err_t esp_qcloud_device_add_cb(const esp_qcloud_get_param_t get_param_cb,
                                    const esp_qcloud_set_param_t set_param_cb);
 
-esp_err_t esp_qcloud_create_device(const char *product_id, const char *devic_name);
-esp_err_t esp_qcloud_device_version(const char *version);
-esp_err_t esp_qcloud_device_secret(const char *device_secret);
-esp_err_t esp_qcloud_device_cert(const char *cert_crt, const char *private_key);
-const char *esp_qcloud_get_version();
-const char *esp_qcloud_get_device_name();
-const char *esp_qcloud_get_product_id();
-esp_qcloud_auth_mode_t esp_qcloud_get_auth_mode();
-const char *esp_qcloud_get_device_secret();
-const char *esp_qcloud_get_cert_crt();
-const char *esp_qcloud_get_private_key();
+esp_err_t esp_qcloud_create_device(void);
+esp_err_t esp_qcloud_device_add_fw_version(const char *version);
+
+const char *esp_qcloud_get_version(void);
+const char *esp_qcloud_get_device_name(void);
+const char *esp_qcloud_get_product_id(void);
+esp_qcloud_auth_mode_t esp_qcloud_get_auth_mode(void);
+const char *esp_qcloud_get_device_secret(void);
+const char *esp_qcloud_get_cert_crt(void);
+const char *esp_qcloud_get_private_key(void);
 
 
 
@@ -90,18 +104,18 @@ esp_qcloud_param_val_t esp_qcloud_bool(bool val);
 esp_qcloud_param_val_t esp_qcloud_int(int val);
 esp_qcloud_param_val_t esp_qcloud_float(float val);
 esp_qcloud_param_val_t esp_qcloud_str(const char *val);
-esp_err_t esp_qcloud_device_param(const char *id, esp_qcloud_param_val_t default_value);
+esp_err_t esp_qcloud_device_add_param(const char *id, esp_qcloud_param_val_type_t type);
 
 esp_err_t esp_qcloud_handle_set_param(const cJSON *request_params, cJSON *reply_data);
 esp_err_t esp_qcloud_handle_get_param(const cJSON *request_data, cJSON *reply_data);
 
-esp_err_t esp_qcloud_iothub_init();
-esp_err_t esp_qcloud_iothub_start();
-esp_err_t esp_qcloud_iothub_stop();
+esp_err_t esp_qcloud_iothub_init(void);
+esp_err_t esp_qcloud_iothub_start(void);
+esp_err_t esp_qcloud_iothub_stop(void);
 esp_err_t esp_qcloud_iothub_bind(const char *token);
 
 
-bool esp_qcloud_iothub_is_connected();
+bool esp_qcloud_iothub_is_connected(void);
 
 /** Enable OTA
  *
@@ -116,7 +130,7 @@ bool esp_qcloud_iothub_is_connected();
  * @return ESP_OK on success
  * @return error on failure
  */
-esp_err_t esp_qcloud_iothub_ota_enable();
+esp_err_t esp_qcloud_iothub_ota_enable(void);
 
 #ifdef __cplusplus
 }

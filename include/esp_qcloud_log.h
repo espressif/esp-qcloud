@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __ESP_QCLOUD_DEBUG_LOG_H__
-#define __ESP_QCLOUD_DEBUG_LOG_H__
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,7 +76,7 @@ typedef struct {
  *
  * @return
  *     - ESP_OK
- *     - ESP_QCLOUD_FAIL
+ *     - ESP_FAIL
  */
 esp_err_t esp_qcloud_log_get_config(esp_qcloud_log_config_t *config);
 
@@ -88,7 +87,7 @@ esp_err_t esp_qcloud_log_get_config(esp_qcloud_log_config_t *config);
  *
  * @return
  *     - ESP_OK
- *     - ESP_QCLOUD_FAIL
+ *     - ESP_FAIL
  */
 esp_err_t esp_qcloud_log_set_config(const esp_qcloud_log_config_t *config);
 
@@ -111,8 +110,16 @@ esp_err_t esp_qcloud_log_init(const esp_qcloud_log_config_t *config);
  */
 esp_err_t esp_qcloud_log_deinit(void);
 
-
-esp_err_t esp_qcloud_log_iothub_write(esp_log_level_t level, const struct tm *log_time, const char *data, size_t size);
+/**
+ * @brief  Send log information to Tencent Cloud server
+ *
+ * @param  config The configuration of the log
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_level_t level, const struct tm *log_time);
 
 /**
  * @brief Read memory data in flash
@@ -134,9 +141,8 @@ esp_err_t esp_qcloud_log_flash_read(char *data, size_t *size);
  * @return
  *      - size
  */
-size_t esp_qcloud_log_flash_size();
+size_t esp_qcloud_log_flash_size(void);
 
 #ifdef __cplusplus
 }
 #endif /**< _cplusplus */
-#endif /**< __ESP_QCLOUD_DEBUG_LOG_H__ */

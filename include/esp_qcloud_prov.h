@@ -27,17 +27,27 @@ extern "C"
 #include <esp_event.h>
 #include <esp_log.h>
 
+#include "esp_smartconfig.h"
+
+typedef enum {
+    SOFTAPCONFIG_TYPE_ESPRESSIF = 1,       /**< protocol: LeXin */
+    SOFTAPCONFIG_TYPE_TENCENT,         /**< protocol: Tencent */
+    SOFTAPCONFIG_TYPE_ESPRESSIF_TENCENT,   /**< protocol: LeXin and Tencent */
+} softapconfig_type_t;
+
 bool esp_qcloud_prov_is_provisioned(void);
 esp_err_t esp_qcloud_wifi_init(void);
 esp_err_t esp_qcloud_wifi_start(const wifi_config_t *sta_cfg);
 
-esp_err_t esp_qcloud_prov_smartconfig_start();
-esp_err_t esp_qcloud_prov_smartconfig_stop();
+esp_err_t esp_qcloud_prov_smartconfig_start(smartconfig_type_t type);
+esp_err_t esp_qcloud_prov_smartconfig_stop(void);
 
-esp_err_t esp_qcloud_prov_softap_start(const char *ssid, const char *password, const char *pop);
-esp_err_t esp_qcloud_prov_softap_stop();
+esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type, const char *ssid, const char *password);
+esp_err_t esp_qcloud_prov_softapconfig_stop(void);
 
-esp_err_t esp_qcloud_prov_wait(wifi_config_t **sta_cfg, char **token, TickType_t ticks_wait);
+esp_err_t esp_qcloud_prov_wait(wifi_config_t *sta_cfg, uint32_t wait_ms);
+
+void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport);
 
 #ifdef __cplusplus
 }

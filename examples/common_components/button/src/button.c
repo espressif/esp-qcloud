@@ -29,7 +29,7 @@
 #include <freertos/timers.h>
 #include <esp_log.h>
 #include <driver/gpio.h>
-#include <iot_button.h>
+#include <button.h>
 
 #define IOT_CHECK(tag, a, ret)  if(!(a)) {                                             \
         ESP_LOGE(tag,"%s:%d (%s)", __FILE__, __LINE__, __FUNCTION__);      \
@@ -204,7 +204,7 @@ static void button_free_tmr(xTimerHandle* tmr)
     }
 }
 
-esp_err_t iot_button_delete(button_handle_t btn_handle)
+esp_err_t button_delete(button_handle_t btn_handle)
 {
     POINT_ASSERT(TAG, btn_handle, ESP_ERR_INVALID_ARG);
     button_dev_t* btn = (button_dev_t*) btn_handle;
@@ -227,7 +227,7 @@ esp_err_t iot_button_delete(button_handle_t btn_handle)
     return ESP_OK;
 }
 
-button_handle_t iot_button_create(gpio_num_t gpio_num, button_active_t active_level)
+button_handle_t button_create(gpio_num_t gpio_num, button_active_t active_level)
 {
     IOT_CHECK(TAG, gpio_num < GPIO_NUM_MAX, NULL);
     button_dev_t* btn = (button_dev_t*) calloc(1, sizeof(button_dev_t));
@@ -262,7 +262,7 @@ button_handle_t iot_button_create(gpio_num_t gpio_num, button_active_t active_le
     return (button_handle_t) btn;
 }
 
-esp_err_t iot_button_rm_cb(button_handle_t btn_handle, button_cb_type_t type)
+esp_err_t button_rm_cb(button_handle_t btn_handle, button_cb_type_t type)
 {
     button_dev_t* btn = (button_dev_t*) btn_handle;
     button_cb_t* btn_cb = NULL;
@@ -282,7 +282,7 @@ esp_err_t iot_button_rm_cb(button_handle_t btn_handle, button_cb_type_t type)
     return ESP_OK;
 }
 
-esp_err_t iot_button_set_serial_cb(button_handle_t btn_handle, uint32_t start_after_sec, TickType_t interval_tick, button_cb cb, void* arg)
+esp_err_t button_set_serial_cb(button_handle_t btn_handle, uint32_t start_after_sec, TickType_t interval_tick, button_cb cb, void* arg)
 {
     button_dev_t* btn = (button_dev_t*) btn_handle;
     btn->serial_thres_sec = start_after_sec;
@@ -298,7 +298,7 @@ esp_err_t iot_button_set_serial_cb(button_handle_t btn_handle, uint32_t start_af
     return ESP_OK;
 }
 
-esp_err_t iot_button_set_evt_cb(button_handle_t btn_handle, button_cb_type_t type, button_cb cb, void* arg)
+esp_err_t button_set_evt_cb(button_handle_t btn_handle, button_cb_type_t type, button_cb cb, void* arg)
 {
     POINT_ASSERT(TAG, btn_handle, ESP_ERR_INVALID_ARG);
     button_dev_t* btn = (button_dev_t*) btn_handle;
@@ -320,12 +320,12 @@ esp_err_t iot_button_set_evt_cb(button_handle_t btn_handle, button_cb_type_t typ
         btn->tap_short_cb.interval = BUTTON_GLITCH_FILTER_TIME_MS / portTICK_RATE_MS;
         btn->tap_short_cb.pbtn = btn;
     } else if (type == BUTTON_CB_SERIAL) {
-        iot_button_set_serial_cb(btn_handle, 1, 1000 / portTICK_RATE_MS, cb, arg);
+        button_set_serial_cb(btn_handle, 1, 1000 / portTICK_RATE_MS, cb, arg);
     }
     return ESP_OK;
 }
 
-esp_err_t iot_button_add_on_press_cb(button_handle_t btn_handle, uint32_t press_sec, button_cb cb, void* arg)
+esp_err_t button_add_on_press_cb(button_handle_t btn_handle, uint32_t press_sec, button_cb cb, void* arg)
 {
     POINT_ASSERT(TAG, btn_handle, ESP_ERR_INVALID_ARG);
     IOT_CHECK(TAG, press_sec != 0, ESP_ERR_INVALID_ARG);
@@ -343,7 +343,7 @@ esp_err_t iot_button_add_on_press_cb(button_handle_t btn_handle, uint32_t press_
     return ESP_OK;
 }
 
-esp_err_t iot_button_add_on_release_cb(button_handle_t btn_handle, uint32_t press_sec, button_cb cb, void* arg)
+esp_err_t button_add_on_release_cb(button_handle_t btn_handle, uint32_t press_sec, button_cb cb, void* arg)
 {
     POINT_ASSERT(TAG, btn_handle, ESP_ERR_INVALID_ARG);
     IOT_CHECK(TAG, press_sec != 0, ESP_ERR_INVALID_ARG);

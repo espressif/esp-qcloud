@@ -142,22 +142,30 @@ static esp_err_t validate_image_header(esp_qcloud_ota_info_t *ota_info, esp_app_
         ESP_LOGD(TAG, "Running firmware version: %s", running_app_info.version);
     }
 
-#ifndef CONFIG_ESP_QCLOUD_SKIP_VERSION_CHECK
+#ifndef CONFIG_QCLOUD_SKIP_VERSION_CHECK
 
     if (memcmp(new_app_info->version, running_app_info.version, sizeof(new_app_info->version)) == 0) {
         ESP_LOGW(TAG, "Current running version is same as the new. We will not continue the update.");
-        esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_FAIL, "Same version received");
+
+        if (ota_info) {
+            esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_FAIL, "Same version received");
+        }
+
         return ESP_FAIL;
     }
 
 #endif
 
-#ifndef CONFIG_ESP_QCLOUD_SKIP_PROJECT_NAME_CHECK
+#ifndef CONFIG_QCLOUD_SKIP_PROJECT_NAME_CHECK
 
     if (memcmp(new_app_info->project_name, running_app_info.project_name, sizeof(new_app_info->project_name)) != 0) {
         ESP_LOGW(TAG, "OTA Image built for Project: %s. Expected: %s",
                  new_app_info->project_name, running_app_info.project_name);
-        esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_FAIL, "Project Name mismatch");
+
+        if (ota_info) {
+            esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_FAIL, "Project Name mismatch");
+        }
+
         return ESP_FAIL;
     }
 
@@ -175,9 +183,7 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
         .timeout_ms = 5000,
         .buffer_size = 1024,
         .buffer_size_tx = 1024,
-#ifndef CONFIG_ESP_QCLOUD_SKIP_COMMON_NAME_CHECK
         .skip_cert_common_name_check = true,
-#endif
     };
     esp_https_ota_config_t ota_config = {
         .http_config = &http_config,
@@ -270,7 +276,6 @@ static void esp_qcloud_iothub_ota_callback(const char *topic, void *payload, siz
         strcpy(ota_info->md5sum, strdup(cJSON_GetObjectItem(request_data, "md5sum")->valuestring));
         strcpy(ota_info->url, strdup(cJSON_GetObjectItem(request_data, "url")->valuestring));
         strcpy(ota_info->version, strdup(cJSON_GetObjectItem(request_data, "version")->valuestring));
-
         esp_qcloud_iotbub_ota_task(ota_info);
     }
 

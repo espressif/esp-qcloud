@@ -1,0 +1,4 @@
+qcloud-key,namespace,
+product_id,data,string
+device_name,data,string
+device_secret,data,string

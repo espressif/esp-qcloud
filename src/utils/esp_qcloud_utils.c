@@ -11,34 +11,45 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <stdint.h>
+#include <sys/time.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/timers.h"
+
+#include "esp_wifi.h"
 #include <esp_timer.h>
 #include <esp_system.h>
 #include "esp_sntp.h"
 #include "esp_log.h"
 
-static esp_timer_handle_t g_reboot_timer;
+#include "esp_qcloud_utils.h"
 
-static void esp_qcloud_reboot_cb(void *priv)
+static const char *TAG = "esp_qcloud_utils";
+
+static void show_system_info_timercb(void *timer)
 {
-    esp_restart();
+    uint8_t sta_mac[6]        = {0};
+    uint8_t primary           = 0;
+    wifi_second_chan_t second = 0;
+    wifi_ap_record_t ap_info  = {0};
+
+    esp_wifi_get_mac(ESP_IF_WIFI_STA, sta_mac);
+    esp_wifi_get_channel(&primary, &second);
+    esp_wifi_sta_get_ap_info(&ap_info);
+
+    ESP_LOGI(TAG, "System information sta_mac: " MACSTR ", channel: [%d/%d], rssi: %d, free_heap: %u, minimum_heap: %u",
+             MAC2STR(sta_mac), primary, second, ap_info.rssi, esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
+
+    if (!heap_caps_check_integrity_all(true)) {
+        ESP_LOGE(TAG, "At least one heap is corrupt");
+    }
 }
 
-esp_err_t esp_qcloud_reboot(uint32_t wait_ticks)
+void esp_qcloud_print_system_info(uint32_t interval_ms)
 {
-    if (g_reboot_timer) {
-        return ESP_FAIL;
-    }
-
-    esp_timer_create_args_t g_reboot_timer_conf = {
-        .callback = esp_qcloud_reboot_cb,
-        .dispatch_method = ESP_TIMER_TASK,
-        .name = "qcloud_reboot_tm"
-    };
-
-    if (esp_timer_create(&g_reboot_timer_conf, &g_reboot_timer) == ESP_OK) {
-        return esp_timer_start_once(g_reboot_timer, pdMS_TO_TICKS(wait_ticks) * 1000U);
-    }
-
-    return ESP_FAIL;
+    TimerHandle_t timer = xTimerCreate("show_system_info", pdMS_TO_TICKS(interval_ms),
+                                       true, NULL, show_system_info_timercb);
+    xTimerStart(timer, 0);
 }

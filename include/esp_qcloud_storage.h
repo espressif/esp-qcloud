@@ -11,7 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
+
 #include <esp_err.h>
 
 #ifdef __cplusplus
@@ -24,26 +26,56 @@ extern "C"
  * This API is internally called by esp_qcloud_init(). Applications may call this
  * only if access to the ESP QCloud storage is required before esp_qcloud_init().
  *
- * @return ESP_OK n success
- * @return error on failure
+ * @return
+ *     - ESP_FAIL
+ *     - ESP_OK
  */
-esp_err_t esp_qcloud_storage_init();
+esp_err_t esp_qcloud_storage_init(void);
 
-/** Get data from ESP QCloud storage
+/**
+ * @brief save the information with given key
  *
- * This API will return NULL terminated keys/certificates
- * from the ESP QCloud storage.
+ * @param  key    Key name. Maximal length is 15 characters. Shouldn't be empty.
+ * @param  value  The value to set.
+ * @param  length length of binary value to set, in bytes; Maximum length is
+ *                1984 bytes (508000 bytes or (97.6% of the partition size - 4000) bytes
+ *                whichever is lower, in case multi-page blob support is enabled).
  *
- * @note This API allocates memory in the heap to hold the value. Once finished,
- * please free this using free().
- *
- * @param[in] key A NULL terminated key indicating the entity to be fetched
- *
- * @return Pointer to a NULL terminated string on success
- * @return NULL on error
+ * @return
+ *     - ESP_FAIL
+ *     - ESP_OK
  */
-void *esp_qcloud_storage_get(const char *key);
-esp_err_t esp_qcloud_storage_set(const char *key, void *data, size_t len);
+esp_err_t esp_qcloud_storage_set(const char *key, const void *value, size_t length);
+
+/**
+ * @brief  Load the information,
+ *         esp_err_t esp_qcloud_storage_load(const char *key, void *value, size_t *length);
+ *         esp_err_t esp_qcloud_storage_load(const char *key, void *value, size_t length);
+ *
+ * @attention  The interface of this api supports size_t and size_t * types.
+ *             When the length parameter of the pass is size_t, it is only the
+ *             length of the value. When the length parameter of the pass is size_t *,
+ *             the length of the saved information can be obtained.
+ *
+ * @param  key    The corresponding key of the information that want to load
+ * @param  value  The corresponding value of key
+ * @param  length The length of the value, Pointer type will return length
+ *
+ * @return
+ *     - ESP_FAIL
+ *     - ESP_OK
+ */
+esp_err_t esp_qcloud_storage_get(const char *key, void *value, size_t length);
+
+/*
+ * @brief  Erase the information with given key
+ *
+ * @param  key The corresponding key of the information that want to erase
+ *
+ * @return
+ *     - ESP_FAIL
+ *     - ESP_OK
+ */
 esp_err_t esp_qcloud_storage_erase(const char *key);
 
 #ifdef __cplusplus

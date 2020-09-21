@@ -13,8 +13,12 @@
 // limitations under the License.
 
 #pragma once
+
 #include <stdint.h>
 #include <esp_err.h>
+
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -25,49 +29,6 @@ typedef struct esp_qcloud_time_config {
     /** If not specified, then 'CONFIG_ESP_QCLOUD_SNTP_SERVER_NAME' is used as the SNTP server. */
     char *sntp_server_name;
 } esp_qcloud_time_config_t;
-
-/** Reboot the chip after a delay
- *
- * This API just starts an esp_timer and executes a reboot from that.
- * Useful if you want to reboot after a delay, to allow other tasks to finish
- * their operations (Eg. MQTT publish to indicate OTA success)
- *
- * @param[in] ticks Time in ticks after which the chip should reboot
- *
- * @return ESP_OK on success
- * @return error on failure
- */
-esp_err_t esp_qcloud_reboot(uint32_t wait_ticks);
-
-/** Initialize time synchronization
- *
- * This API initializes SNTP for time synchronization.
- *
- * @return ESP_OK on success
- * @return error on failure
- */
-esp_err_t esp_qcloud_timesync_start();
-
-/** Check if current time is updated
- *
- * This API checks if the current system time is updated against the reference time of 1-Jan-2019.
- *
- * @return true if time is updated
- * @return false if time is not updated
- */
-bool esp_qcloud_timesync_check(void);
-
-/** Wait for time synchronization
- *
- * This API waits for the system time to be updated against the reference time of 1-Jan-2019.
- * This is a blocking call.
- *
- * @param[in] wait_ticks Number of ticks to wait for time synchronization. Accepted values: 0 to portMAX_DELAY.
- *
- * @return ESP_OK on success
- * @return error on failure
- */
-esp_err_t esp_qcloud_timesync_wait(uint32_t wait_ticks);
 
 /**
  * Macro which can be used to check the error code,
@@ -136,6 +97,80 @@ esp_err_t esp_qcloud_timesync_wait(uint32_t wait_ticks);
         } \
     } while(0)
 
+/** Reboot the chip after a delay
+ *
+ * This API just starts an esp_timer and executes a reboot from that.
+ * Useful if you want to reboot after a delay, to allow other tasks to finish
+ * their operations (Eg. MQTT publish to indicate OTA success)
+ *
+ * @param[in] ticks Time in ticks after which the chip should reboot
+ *
+ * @return ESP_OK on success
+ * @return error on failure
+ */
+esp_err_t esp_qcloud_reboot(TickType_t wait_ticks);
+
+/**
+ * @brief Get the number of consecutive restarts
+ *
+ * @return
+ *     - count
+ */
+int esp_qcloud_reboot_unbroken_count(void);
+
+/**
+ * @brief Get the number of restarts
+ *
+ * @return
+ *     - count
+ */
+int esp_qcloud_reboot_total_count(void);
+
+/**
+ * @brief Determine if the restart is caused by an exception.
+ *
+ * @return
+ *     - true
+ *     - false
+ */
+bool esp_qcloud_reboot_is_exception(bool erase_coredump);
+
+/** Initialize time synchronization
+ *
+ * This API initializes SNTP for time synchronization.
+ *
+ * @return ESP_OK on success
+ * @return error on failure
+ */
+esp_err_t esp_qcloud_timesync_start(void);
+
+/** Check if current time is updated
+ *
+ * This API checks if the current system time is updated against the reference time of 1-Jan-2019.
+ *
+ * @return true if time is updated
+ * @return false if time is not updated
+ */
+bool esp_qcloud_timesync_check(void);
+
+/** Wait for time synchronization
+ *
+ * This API waits for the system time to be updated against the reference time of 1-Jan-2019.
+ * This is a blocking call.
+ *
+ * @param[in] uint32_t Number of ticks to wait for time synchronization.
+ *
+ * @return ESP_OK on success
+ * @return error on failure
+ */
+esp_err_t esp_qcloud_timesync_wait(uint32_t wait_ms);
+
+/** Interval printing system information
+ * 
+ * @param[in] uint32_t Interval of printing system log information
+ * 
+ */
+void esp_qcloud_print_system_info(uint32_t interval_ms);
 
 #ifdef __cplusplus
 }
