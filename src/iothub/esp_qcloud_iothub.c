@@ -393,7 +393,7 @@ esp_err_t esp_qcloud_iothub_init()
 
 static void esp_qcloud_iothub_bond_callback(const char *topic, void *payload, size_t payload_len, void *priv_data)
 {
-    ESP_LOGI("TAG", "bond_callback: topic: %s, payload: %.*s", topic, payload_len, (char *)payload);
+    ESP_LOGI(TAG, "bond_callback: topic: %s, payload: %.*s", topic, payload_len, (char *)payload);
 
     cJSON *root_json  = cJSON_Parse(payload);
     ESP_QCLOUD_ERROR_GOTO(!root_json, EXIT, "The data format is wrong and cannot be parsed");
