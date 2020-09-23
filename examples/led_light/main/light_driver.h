@@ -54,7 +54,7 @@ typedef struct {
 
 #ifdef CONFIG_LIGHT_TYPE_MESHKIT
 #define COFNIG_LIGHT_TYPE_DEFAULT() { \
-            .type            = "meshlight"\
+            .type            = "meshlight",\
             .gpio_red        = GPIO_NUM_4,\
             .gpio_green      = GPIO_NUM_16,\
             .gpio_blue       = GPIO_NUM_5,\
