@@ -218,11 +218,19 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
     esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_DOWNLOADING, "Downloading Firmware Image");
 
     for (int report_percent = 10;;) {
+
+        static int last_size = 0;
         err = esp_https_ota_perform(https_ota_handle);
         ESP_QCLOUD_ERROR_BREAK(err != ESP_ERR_HTTPS_OTA_IN_PROGRESS, "esp_https_ota_perform");
 
         ota_info->download_size = esp_https_ota_get_image_len_read(https_ota_handle);
+        ESP_QCLOUD_ERROR_GOTO(ota_info->download_size == last_size, EXIT, "esp_https_ota_perform");
         ota_info->download_percent = ota_info->download_size * 100 / ota_info->file_size;
+
+        last_size = ota_info->download_size;
+
+        ESP_LOGW(TAG, "Downloading Firmware Image, size: %d, percent: %d%% err: %d, err_str: %s",
+                         ota_info->download_size, ota_info->download_percent, err, esp_err_to_name(err));
 
         if (report_percent == ota_info->download_percent) {
             esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_DOWNLOADING, "Firmware Image downloading.......");
@@ -276,8 +284,11 @@ static void esp_qcloud_iothub_ota_callback(const char *topic, void *payload, siz
         strcpy(ota_info->md5sum, strdup(cJSON_GetObjectItem(request_data, "md5sum")->valuestring));
         strcpy(ota_info->url, strdup(cJSON_GetObjectItem(request_data, "url")->valuestring));
         strcpy(ota_info->version, strdup(cJSON_GetObjectItem(request_data, "version")->valuestring));
-        esp_qcloud_iotbub_ota_task(ota_info);
+
+        xTaskCreatePinnedToCore(esp_qcloud_iotbub_ota_task, "iotbub_ota", 4 * 1024, ota_info, 1, NULL, 0);
     }
+
+    ESP_LOGW(TAG, "esp_qcloud_iothub_ota_callback exit");
 
 EXIT:
     cJSON_Delete(request_data);
