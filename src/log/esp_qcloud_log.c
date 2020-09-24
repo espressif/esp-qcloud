@@ -107,7 +107,7 @@ static ssize_t esp_qcloud_log_vprintf(const char *fmt, va_list vp)
     }
 
     if (log_info->level <= g_log_config->log_level_uart) {
-        printf(log_info->data); /**< Write log data to uart */
+        vprintf(fmt, vp); /**< Write log data to uart */
     }
 
     if (!g_log_queue || xQueueSend(g_log_queue, &log_info, 0) == pdFALSE) {
