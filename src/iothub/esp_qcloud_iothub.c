@@ -155,8 +155,8 @@ static esp_err_t esp_qcloud_iothub_reply(const char *method, const char *token, 
     cJSON_Delete(json_publish_data);
 
     err = esp_qcloud_mqtt_publish(publish_topic, publish_data, strlen(publish_data));
-    ESP_QCLOUD_ERROR_GOTO(err != ESP_OK, EXIT, "<%s> Publispublish, topic: $thing/up/property/65BEMES9XM/dev001, data: h to %s, data: %s",
-                          esp_err_to_name(err), publish_topic, publish_data);
+    ESP_QCLOUD_ERROR_GOTO(err != ESP_OK, EXIT, "<%s> Publispublish, topic: $thing/up/property/%s/%s, data: h to %s, data: %s",
+                          esp_err_to_name(err), esp_qcloud_get_product_id(), esp_qcloud_get_device_name(), publish_topic, publish_data);
 
     ESP_LOGI(TAG, "mqtt_publish, topic: %s, data: %s", publish_topic, publish_data);
 
