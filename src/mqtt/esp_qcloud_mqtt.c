@@ -273,7 +273,7 @@ esp_err_t esp_qcloud_mqtt_init(esp_qcloud_mqtt_config_t *config)
         .cert_pem  = config->server_cert,
         .client_cert_pem = config->client_cert,
         .client_key_pem  = config->client_key,
-        .keepalive       = 60,
+        .keepalive       = 15,
         .event_handle    = mqtt_event_handler,
     };
     mqtt_data->mqtt_client = esp_mqtt_client_init(&mqtt_client_cfg);
