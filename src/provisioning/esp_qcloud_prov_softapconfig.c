@@ -13,12 +13,15 @@
 // limitations under the License.
 
 #include <string.h>
+
 #include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 #include <freertos/event_groups.h>
+
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_log.h>
+#include "esp_smartconfig.h"
+
 #include <wifi_provisioning/manager.h>
 #ifdef CONFIG_APP_WIFI_PROV_TRANSPORT_BLE
 #include <wifi_provisioning/scheme_ble.h>
@@ -26,20 +29,7 @@
 #include <wifi_provisioning/scheme_softap.h>
 #endif /* CONFIG_APP_WIFI_PROV_TRANSPORT_BLE */
 
-// #include <esp_qcloud_user_mapping.h>
-#include <qrcode.h>
-#include <nvs.h>
-#include <nvs_flash.h>
 #include "esp_qcloud_prov.h"
-#include "cJSON.h"
-#include "esp_qcloud_storage.h"
-#include "esp_smartconfig.h"
-
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include <lwip/netdb.h>
-
 #include "esp_qcloud_iothub.h"
 #include "esp_qcloud_prov_tencent.h"
 
@@ -154,4 +144,3 @@ esp_err_t esp_qcloud_prov_softapconfig_stop()
 
     return ESP_OK;
 }
-

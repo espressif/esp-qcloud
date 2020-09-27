@@ -20,7 +20,23 @@ extern "C" {
 
 esp_err_t esp_qcloud_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ssize_t inlen,
                                        uint8_t **outbuf, ssize_t *outlen, void *priv_data);
+
+/**
+ * @brief Open UDP service to communicate with WeChat applet.
+ * 
+ * @return
+ *     - ESP_OK: succeed
+ *     - others: fail
+ */
 esp_err_t esp_qcloud_prov_udp_server_start(void);
+
+/**
+ * @brief Stop UDP service.
+ * 
+ * @return
+ *     - ESP_OK: succeed
+ *     - others: fail
+ */
 esp_err_t esp_qcloud_prov_udp_server_stop(void);
 
 #ifdef __cplusplus

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+
 #include <esp_err.h>
 
 #ifdef __cplusplus
@@ -22,21 +23,17 @@ extern "C"
 {
 #endif
 
-/** ESP QCloud MQTT Configuration */
+/**
+ * @brief ESP QCloud MQTT Configuration
+ */
 typedef struct {
-    /** MQTT Host */
-    char *host;
+    char *host;           /**< MQTT Host */
     char *password;
     char *username;
-
-    /** Client ID */
-    char *client_id;
-    /** Client Certificate in NULL terminate PEM format */
-    char *client_cert;
-    /** Client Key in NULL terminate PEM format */
-    char *client_key;
-    /** Server Certificate in NULL terminate PEM format */
-    char *server_cert;
+    char *client_id;      /**< Client ID */
+    char *client_cert;    /**< Client Certificate in NULL terminate PEM format */
+    char *client_key;     /**< Client Key in NULL terminate PEM format */
+    char *server_cert;    /**< Server Certificate in NULL terminate PEM format */
 } esp_qcloud_mqtt_config_t;
 
 /** ESP QCloud MQTT Subscribe callback prototype
