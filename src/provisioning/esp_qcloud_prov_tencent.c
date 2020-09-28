@@ -236,17 +236,17 @@ esp_err_t esp_qcloud_prov_udp_server_stop()
 
 esp_err_t esp_qcloud_prov_wait(wifi_config_t *sta_cfg, uint32_t wait_ms)
 {
-    esp_err_t err = ESP_OK;
     g_wifi_event_group = xEventGroupCreate();
 
     /* Wait for Wi-Fi connection */
-    err = xEventGroupWaitBits(g_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED | QCLOUD_PROV_EVENT_GET_TOKEN,
+     EventBits_t bits = xEventGroupWaitBits(g_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED | QCLOUD_PROV_EVENT_GET_TOKEN,
                         false, true, pdMS_TO_TICKS(wait_ms));
-    if(err != ESP_OK)
-        return ESP_FAIL;
+    if ((bits & QCLOUD_PROV_EVENT_GET_TOKEN) && (bits & QCLOUD_PROV_EVENT_STA_CONNECTED) ) {
+        esp_qcloud_storage_set("token", g_token, AUTH_TOKEN_MAX_SIZE);
+        esp_wifi_get_config(ESP_IF_WIFI_STA, sta_cfg);
 
-    esp_qcloud_storage_set("token", g_token, AUTH_TOKEN_MAX_SIZE);
-    esp_wifi_get_config(ESP_IF_WIFI_STA, sta_cfg);
+        return ESP_OK;
+    }
 
-    return err;
+    return ESP_FAIL;
 }

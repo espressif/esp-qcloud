@@ -92,13 +92,12 @@ static esp_err_t esp_qcloud_ota_report_status(esp_qcloud_ota_info_t *ota_info, e
 
     cJSON_AddStringToObject(progress, "result_code", result_code);
     cJSON_AddStringToObject(progress, "result_msg", result_msg);
-
     cJSON_AddItemToObject(report, "progress", progress);
-    cJSON_AddItemToObject(json_publish_data, "report", report);
+    cJSON_AddStringToObject(report, "version", ota_info->version);
     cJSON_AddStringToObject(json_publish_data, "type", "report_progress");
-    cJSON_AddStringToObject(json_publish_data, "version", ota_info->version);
-
+    cJSON_AddItemToObject(json_publish_data, "report", report);
     publish_data = cJSON_PrintUnformatted(json_publish_data);
+
     cJSON_Delete(json_publish_data);
 
     asprintf(&publish_topic, "$ota/report/%s/%s",
@@ -211,9 +210,6 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
         ota_info->download_percent = ota_info->download_size * 100 / ota_info->file_size;
 
         last_size = ota_info->download_size;
-
-        ESP_LOGW(TAG, "Downloading Firmware Image, size: %d, percent: %d%% err: %d, err_str: %s",
-                         ota_info->download_size, ota_info->download_percent, err, esp_err_to_name(err));
 
         if (report_percent == ota_info->download_percent) {
             esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_DOWNLOADING, "Firmware Image downloading.......");
