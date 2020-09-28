@@ -85,16 +85,21 @@ void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport)
         return;
     }
 
-    char *payload = NULL;
+    char *rainmaker_payload = NULL;
+    char *terminal_payload = NULL;
 
-    asprintf(&payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s&productId=%s&ver=%s&name=%s",
+    asprintf(&terminal_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s&productId=%s&ver=%s&name=%s",
              transport, esp_qcloud_get_product_id(), PROV_QR_VERSION, name);
     ESP_LOGI(TAG, "Scan this QR code from the Wechat for Provisioning.");
-    qrcode_display(payload);
+    qrcode_display(terminal_payload);
+    
+    asprintf(&rainmaker_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s%%26productId=%s%%26ver=%s%%26name=%s",
+             transport, esp_qcloud_get_product_id(), PROV_QR_VERSION, name);
     ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s",
-             "https://rainmaker.espressif.com/qrcode.html", payload);
+             "https://rainmaker.espressif.com/qrcode.html", rainmaker_payload);
 
-    ESP_QCLOUD_FREE(payload);
+    ESP_QCLOUD_FREE(rainmaker_payload);
+    ESP_QCLOUD_FREE(terminal_payload);
 }
 
 
