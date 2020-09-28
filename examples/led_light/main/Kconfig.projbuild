@@ -84,27 +84,27 @@ menu "ESP QCloud Example Configuration"
 
 menu "Light provisioning network selection"
         config LIGHT_PROVISIONING_SMARTCONFIG
-            bool "Enable smartconfig's smart network configuration method"
+            bool "Enable SmartConfig's smart network configuration method"
             default y
             help
-                Enable smartconfig's smart network configuration method
+                Enable SmartConfig's smart network configuration method
         
         config LIGHT_PROVISIONING_SOFTAPCONFIG
-            bool "Enable softap's network configuration method"
+            bool "Enable SoftAP's network configuration method"
             default y
             help
-                "Enable softap's network configuration method"
+                "Enable SoftAP's network configuration method"
 
         config LIGHT_PROVISIONING_SOFTAPCONFIG_SSID
             depends on LIGHT_PROVISIONING_SOFTAPCONFIG
-            string "softap ssid"
+            string "SoftAP ssid"
             default "tcloud_XXX"
             help
                 SSID (network name) for the phone to connect to.
 
         config LIGHT_PROVISIONING_SOFTAPCONFIG_PASSWORD
             depends on LIGHT_PROVISIONING_SOFTAPCONFIG
-            string "softap password"
+            string "SoftAP password"
             default ""
             help
                 WiFi password (WPA or WPA2) for the example to use.

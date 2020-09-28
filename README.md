@@ -156,7 +156,7 @@
             UART for console input (UART0)  --->
             ```
 
-            - 不开启 `ESP Qcloud Mass Manufacture` 选项。
+            - 不开启 `ESP QCloud Mass Manufacture` 选项。
 
         3. **填入你的信息**
 
@@ -165,7 +165,7 @@
 
     - **通过量产工具配置**
     
-        请参考量产工具目录下的 [文档](./cofig/mass_mfg/README.md) ，另外需要 <b>开启</b> `ESP Qcloud Mass Manufacture` 选项。
+        请参考量产工具目录下的 [文档](./cofig/mass_mfg/README.md) ，另外需要 <b>开启</b> `ESP QCloud Mass Manufacture` 选项。
 
 
 3. **构建项目**
