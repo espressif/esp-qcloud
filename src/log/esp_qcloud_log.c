@@ -64,7 +64,7 @@ esp_err_t esp_qcloud_log_set_config(const esp_qcloud_log_config_t *config)
 static ssize_t esp_qcloud_log_vprintf(const char *fmt, va_list vp)
 {
     size_t log_size = 0;
-    log_info_t *log_info = ESP_QCLOUD_MALLOC(sizeof(log_info_t));
+    log_info_t *log_info = ESP_QCLOUD_LOG_MALLOC(sizeof(log_info_t));
     time_t now = 0;
 
     time(&now);
@@ -76,6 +76,10 @@ static ssize_t esp_qcloud_log_vprintf(const char *fmt, va_list vp)
      * @brief Remove the header and tail that appear in the string in the log
      *
      */
+    if(log_info->size == 0 ) {
+        return 0;
+    }
+    
     if (log_info->size > 7) {
         uint8_t log_level_index = (log_info->data[0] == '\033') ? 7 : 0;
 
@@ -110,8 +114,8 @@ static ssize_t esp_qcloud_log_vprintf(const char *fmt, va_list vp)
     }
 
     if (!g_log_queue || xQueueSend(g_log_queue, &log_info, 0) == pdFALSE) {
-        ESP_QCLOUD_FREE(log_info->data);
-        ESP_QCLOUD_FREE(log_info);
+        ESP_QCLOUD_LOG_FREE(log_info->data);
+        ESP_QCLOUD_LOG_FREE(log_info);
     }
 
     return log_size;
@@ -142,8 +146,8 @@ static void esp_qcloud_log_send_task(void *arg)
             // esp_qcloud_debug_local_write(log_data, log_size);  /**< Write log data to local */
         }
 
-        ESP_QCLOUD_FREE(log_info->data);
-        ESP_QCLOUD_FREE(log_info);
+        ESP_QCLOUD_LOG_FREE(log_info->data);
+        ESP_QCLOUD_LOG_FREE(log_info);
     }
 
     vTaskDelete(NULL);
@@ -185,15 +189,16 @@ esp_err_t esp_qcloud_log_deinit()
         return ESP_FAIL;
     }
 
-    for (esp_qcloud_log_queue_t *log_data = NULL;
+    for (log_info_t *log_data = NULL;
             xQueueReceive(g_log_queue, &log_data, 0);) {
-        ESP_QCLOUD_FREE(log_data);
+        ESP_QCLOUD_LOG_FREE(log_data);
+        ESP_QCLOUD_LOG_FREE(log_data->data);
     }
 
     esp_qcloud_log_flash_deinit();
 
     g_log_init_flag = false;
-    ESP_QCLOUD_FREE(g_log_config);
+    ESP_QCLOUD_LOG_FREE(g_log_config);
 
     return ESP_OK;
 }

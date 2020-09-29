@@ -63,7 +63,7 @@ esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_lev
     mbedtls_md_context_t sha_ctx;
     char *response_data = NULL;
     size_t log_size = sizeof(esp_qcloud_log_iothub_t) + size;
-    esp_qcloud_log_iothub_t *log_data = ESP_QCLOUD_MALLOC(log_size + 1);
+    esp_qcloud_log_iothub_t *log_data = ESP_QCLOUD_LOG_MALLOC(log_size + 1);
 
     /**
      * @breif Construct iothub log data
@@ -134,7 +134,7 @@ esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_lev
 
 EXIT:
     mbedtls_md_free(&sha_ctx);
-    ESP_QCLOUD_FREE(log_data);
-    ESP_QCLOUD_FREE(response_data);
+    ESP_QCLOUD_LOG_FREE(log_data);
+    ESP_QCLOUD_LOG_FREE(response_data);
     return err;
 }

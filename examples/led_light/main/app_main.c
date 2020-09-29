@@ -140,6 +140,12 @@ void app_main()
         .log_level_uart = ESP_LOG_INFO,
     };
     ESP_ERROR_CHECK(esp_qcloud_log_init(&log_config));
+    /**
+     * @brief Set log level
+     * @note  This function can not raise log level above the level set using
+     * CONFIG_LOG_DEFAULT_LEVEL setting in menuconfig.
+     */
+    esp_log_level_set("*", ESP_LOG_VERBOSE);
 
 #ifdef CONFIG_LIGHT_DEBUG
     ESP_ERROR_CHECK(esp_qcloud_console_init());

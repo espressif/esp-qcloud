@@ -172,7 +172,7 @@ esp_err_t esp_qcloud_log_flash_init()
 
     g_esp_qcloud_log_flash_init_flag = true;
     ESP_LOGI(TAG, "LOG flash initialized successfully");
-    ESP_LOGI(TAG, "Log save partition subtype: label: %s, addr: 0x%d, offset: %d, size: %d",
+    ESP_LOGI(TAG, "Log save partition subtype: label: %s, addr:0x%x, offset: %d, size: %d",
              CONFIG_QCLOUD_LOG_PARTITION_LABEL_DATA, g_log_part->address, CONFIG_QCLOUD_LOG_PARTITION_OFFSET, g_log_part->size);
 
     return ESP_OK;
