@@ -42,6 +42,9 @@ extern "C" {
 #define ESP_QCLOUD_LOG_PRINTF(fmt, ...)
 #endif
 
+#define ESP_QCLOUD_LOG_MALLOC malloc
+#define ESP_QCLOUD_LOG_FREE   free
+
 /**
  * @brief Log sending configuration
  */
