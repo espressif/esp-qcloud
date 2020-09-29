@@ -12,28 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sdkconfig.h>
 #include <string.h>
+
 #include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 #include <freertos/queue.h>
 #include <freertos/event_groups.h>
 
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <esp_event.h>
-
-#include <esp_qcloud_iothub.h>
-#include <esp_qcloud_utils.h>
-#include "esp_qcloud_mqtt.h"
-
 #include "cJSON.h"
 #include "mbedtls/md.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/error.h"
+
+#include <esp_qcloud_iothub.h>
+#include <esp_qcloud_utils.h>
+#include "esp_qcloud_mqtt.h"
 #include "esp_qcloud_utils.h"
 #include "esp_qcloud_log.h"
 #include "esp_qcloud_storage.h"
+
+#define QCLOUD_IOTHUB_DEVICE_SDK_APPID             "21010406"
+#define QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN           "iotcloud.tencentdevices.com"
+#define QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS         8883
+#define QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS       1883
 
 ESP_EVENT_DEFINE_BASE(QCLOUD_EVENT);
 
@@ -50,10 +53,10 @@ typedef esp_err_t (*esp_qcloud_property_func_t)(const cJSON *request_data, cJSON
  * @brief Type of handler list
  */
 typedef struct {
-    const char *down_method;         /**< The name of the function */
+    const char *down_method;                /**< The name of the function */
     esp_qcloud_property_func_t down_handle; /**< The pointer of the function */
-    const char *up_method;         /**< The name of the function */
-    esp_qcloud_property_func_t up_handle; /**< The pointer of the function */
+    const char *up_method;                  /**< The name of the function */
+    esp_qcloud_property_func_t up_handle;   /**< The pointer of the function */
 } esp_qcloud_property_handle_t;
 
 static const char *TAG = "esp_qcloud_iothub";
@@ -99,14 +102,11 @@ static esp_err_t esp_qcloud_iothub_publish(const char *topic, const char *method
     asprintf(&publish_topic, "$thing/up/%s/%s/%s",
              topic, esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
 
-    /**
-     *
-     */
     cJSON *json_publish_data = cJSON_CreateObject();
     cJSON_AddStringToObject(json_publish_data, "method", method);
 
-    char *token         = NULL;
-    asprintf(&token, "%s-%05u", esp_qcloud_get_device_name(), esp_random() / 100000);
+    char *token = NULL;
+    asprintf(&token, "%s-%05u", esp_qcloud_get_device_name(), esp_random() % 100000);
     cJSON_AddStringToObject(json_publish_data, "clientToken", token);
     ESP_QCLOUD_FREE(token);
 
@@ -117,9 +117,6 @@ static esp_err_t esp_qcloud_iothub_publish(const char *topic, const char *method
     publish_data = cJSON_PrintUnformatted(json_publish_data);
     cJSON_Delete(json_publish_data);
 
-    /**
-     *
-     */
     err = esp_qcloud_mqtt_publish(publish_topic, publish_data, strlen(publish_data));
     ESP_QCLOUD_ERROR_GOTO(err != ESP_OK, EXIT, "<%s> Publish to %s, data: %s",
                           esp_err_to_name(err), publish_topic,  publish_data);
@@ -169,12 +166,6 @@ EXIT:
 
 static esp_err_t esp_qcloud_iothub_config(esp_qcloud_mqtt_config_t *mqtt_cfg)
 {
-    /* IoT C-SDK APPID */
-#define QCLOUD_IOTHUB_DEVICE_SDK_APPID             "21010406"
-#define QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN           "iotcloud.tencentdevices.com"
-#define QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS         8883
-#define QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS       1883
-
     esp_err_t err = ESP_FAIL;
 
 #ifdef QCLOUD_MQTT_TRANSPORT_OVER_NOSSL
@@ -187,7 +178,7 @@ static esp_err_t esp_qcloud_iothub_config(esp_qcloud_mqtt_config_t *mqtt_cfg)
 
     asprintf(&mqtt_cfg->client_id, "%s%s", esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
     asprintf(&mqtt_cfg->username, "%s;%s;%05u;%ld", mqtt_cfg->client_id,
-             QCLOUD_IOTHUB_DEVICE_SDK_APPID, esp_random() / 100000, LONG_MAX);
+             QCLOUD_IOTHUB_DEVICE_SDK_APPID, esp_random() % 100000, LONG_MAX);
 
     switch (esp_qcloud_get_auth_mode()) {
         case QCLOUD_AUTH_MODE_KEY: {
@@ -332,8 +323,8 @@ EXIT:
 static esp_err_t esp_qcloud_iothub_register_log()
 {
     esp_err_t err         = ESP_OK;
-    char *publish_topic = NULL;
-    char *publish_data  = NULL;
+    char *publish_topic   = NULL;
+    char *publish_data    = NULL;
     char *subscribe_topic = NULL;
 
     /**
@@ -441,13 +432,9 @@ esp_err_t esp_qcloud_iothub_bind(const char *token)
 #endif
 
     data_json = cJSON_CreateObject();
-    cJSON_AddStringToObject(data_json, "module_hardinfo", "ESP32-S2");
+    cJSON_AddStringToObject(data_json, "module_hardinfo", CONFIG_IDF_TARGET);
     cJSON_AddStringToObject(data_json, "module_softinfo", esp_get_idf_version());
     cJSON_AddStringToObject(data_json, "fw_ver", esp_qcloud_get_version());
-    cJSON_AddStringToObject(data_json, "imei", "11-22-33-44");
-    cJSON_AddStringToObject(data_json, "lat", "22.546015");
-    cJSON_AddStringToObject(data_json, "lon", "113.941125");
-
     err = esp_qcloud_iothub_publish("property", "report_info", data_json);
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "<%s> esp_qcloud_iothub_publish", esp_err_to_name(err));
 

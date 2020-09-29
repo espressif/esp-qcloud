@@ -13,47 +13,34 @@
 // limitations under the License.
 
 #include <string.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+
 #include <esp_log.h>
 #include <esp_ota_ops.h>
 #include <esp_partition.h>
 #include <esp_https_ota.h>
 #include <esp_wifi_types.h>
 #include <esp_wifi.h>
-
-#include <esp_qcloud_utils.h>
 #include "cJSON.h"
+
+#include "esp_qcloud_utils.h"
 #include "esp_qcloud_iothub.h"
 #include "esp_qcloud_mqtt.h"
 
+#define OTA_REBOOT_TIMER_SEC  10
 
 static const char *TAG = "esp_qcloud_ota";
 
-#define OTA_REBOOT_TIMER_SEC    10
-
-extern const char esp_qcloud_ota_def_cert[] asm("_binary_ota_server_crt_start");
-const char *ESP_QCLOUD_OTA_DEFAULT_SERVER_CERT = esp_qcloud_ota_def_cert;
-
 typedef enum {
-    QCLOUD_OTA_REPORT_FAIL = -1,
-    // QCLOUD_OTA_REPORT_DOWNLOAD_TIMEOUT = -1,
-    // QCLOUD_OTA_REPORT_FAIL_NOT_EXIST = -2,
-    // QCLOUD_OTA_REPORT_AUTH_FAIL = -3,
-    // QCLOUD_OTA_REPORT_MD5_NOT_MATCH = -4,
-    // QCLOUD_OTA_REPORT_UPDATE_FAIL = -5,
-    // QCLOUD_OTA_REPORT_SAME_VERSION = -6,
-    // QCLOUD_OTA_REPORT_PROJECT_MISMATCH = -7,
-
-    QCLOUD_OTA_REPORT_NONE = 0,
-
-    QCLOUD_OTA_REPORT_VERSION = 1,
-
-    QCLOUD_OTA_REPORT_DOWNLOAD_BEGIN = 2,
-    QCLOUD_OTA_REPORT_DOWNLOADING = 3,
-
-    QCLOUD_OTA_REPORT_BURN_BEGIN = 4,
-    QCLOUD_OTA_REPORT_BURN_SUCCESS = 5,
+    QCLOUD_OTA_REPORT_FAIL            = -1,
+    QCLOUD_OTA_REPORT_NONE            = 0,
+    QCLOUD_OTA_REPORT_VERSION         = 1,
+    QCLOUD_OTA_REPORT_DOWNLOAD_BEGIN  = 2,
+    QCLOUD_OTA_REPORT_DOWNLOADING     = 3,
+    QCLOUD_OTA_REPORT_BURN_BEGIN      = 4,
+    QCLOUD_OTA_REPORT_BURN_SUCCESS    = 5,
 } esp_qcloud_ota_report_type_t;
 
 typedef struct {
@@ -61,7 +48,6 @@ typedef struct {
     char md5sum[33];
     char url[512];
     char version[32];
-
     uint32_t start_timetemp;
     size_t download_size;
     uint8_t download_percent;
@@ -106,13 +92,12 @@ static esp_err_t esp_qcloud_ota_report_status(esp_qcloud_ota_info_t *ota_info, e
 
     cJSON_AddStringToObject(progress, "result_code", result_code);
     cJSON_AddStringToObject(progress, "result_msg", result_msg);
-
     cJSON_AddItemToObject(report, "progress", progress);
-    cJSON_AddItemToObject(json_publish_data, "report", report);
+    cJSON_AddStringToObject(report, "version", ota_info->version);
     cJSON_AddStringToObject(json_publish_data, "type", "report_progress");
-    cJSON_AddStringToObject(json_publish_data, "version", ota_info->version);
-
+    cJSON_AddItemToObject(json_publish_data, "report", report);
     publish_data = cJSON_PrintUnformatted(json_publish_data);
+
     cJSON_Delete(json_publish_data);
 
     asprintf(&publish_topic, "$ota/report/%s/%s",
@@ -189,9 +174,7 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
         .http_config = &http_config,
     };
 
-    // esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_BURN_BEGIN, "Starting OTA Upgrade");
-
-    /* Using a warning just to highlight the message */
+    /*< Using a warning just to highlight the message */
     ESP_LOGW(TAG, "Starting OTA. This may take time.");
 
     esp_https_ota_handle_t https_ota_handle = NULL;
@@ -218,7 +201,6 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
     esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_DOWNLOADING, "Downloading Firmware Image");
 
     for (int report_percent = 10;;) {
-
         static int last_size = 0;
         err = esp_https_ota_perform(https_ota_handle);
         ESP_QCLOUD_ERROR_BREAK(err != ESP_ERR_HTTPS_OTA_IN_PROGRESS, "esp_https_ota_perform");
@@ -228,9 +210,6 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
         ota_info->download_percent = ota_info->download_size * 100 / ota_info->file_size;
 
         last_size = ota_info->download_size;
-
-        ESP_LOGW(TAG, "Downloading Firmware Image, size: %d, percent: %d%% err: %d, err_str: %s",
-                         ota_info->download_size, ota_info->download_percent, err, esp_err_to_name(err));
 
         if (report_percent == ota_info->download_percent) {
             esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_DOWNLOADING, "Firmware Image downloading.......");
@@ -294,12 +273,11 @@ EXIT:
     cJSON_Delete(request_data);
 }
 
-/* Enable the ESP QCloud specific OTA */
 esp_err_t esp_qcloud_iothub_ota_enable()
 {
     esp_err_t err         = ESP_OK;
-    char *publish_topic = NULL;
-    char *publish_data  = NULL;
+    char *publish_topic   = NULL;
+    char *publish_data    = NULL;
     char *subscribe_topic = NULL;
 
     /**

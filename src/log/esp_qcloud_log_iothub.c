@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <string.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
@@ -23,18 +24,19 @@
 #include <esp_wifi.h>
 
 #include "cJSON.h"
+
 #include "esp_qcloud_iothub.h"
 #include "esp_qcloud_mqtt.h"
+#include "esp_qcloud_log.h"
 
 #include "mbedtls/md.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/error.h"
 
-#include "esp_qcloud_log.h"
-
 #define LOG_UPLOAD_SERVER_URL "http://devicelog.iot.cloud.tencent.com/cgi-bin/report-log"
-static const char *TAG = "esp_qcloud_log_iothub";
+#define MAX_HTTP_OUTPUT_BUFFER 128
 
+static const char *TAG = "esp_qcloud_log_iothub";
 typedef struct {
     char signature[40];
     char ctrl_bytes[4];
@@ -45,8 +47,6 @@ typedef struct {
     char log_time[21];
     char data[];
 } esp_qcloud_log_iothub_t;
-
-#define MAX_HTTP_OUTPUT_BUFFER 128
 
 esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_level_t log_level, const struct tm *log_time)
 {

@@ -13,12 +13,21 @@
 // limitations under the License.
 
 #include <string.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/event_groups.h>
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include <lwip/netdb.h>
+#include <cJSON.h>
+
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_log.h>
+#include "esp_smartconfig.h"
+
 #include <wifi_provisioning/manager.h>
 #ifdef CONFIG_APP_WIFI_PROV_TRANSPORT_BLE
 #include <wifi_provisioning/scheme_ble.h>
@@ -26,22 +35,12 @@
 #include <wifi_provisioning/scheme_softap.h>
 #endif /* CONFIG_APP_WIFI_PROV_TRANSPORT_BLE */
 
-// #include <esp_qcloud_user_mapping.h>
-#include <qrcode.h>
-#include <nvs.h>
-#include <nvs_flash.h>
+
 #include "esp_qcloud_prov.h"
-#include "cJSON.h"
 #include "esp_qcloud_storage.h"
-#include "esp_smartconfig.h"
-
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include <lwip/netdb.h>
-
 #include "esp_qcloud_iothub.h"
 #include "esp_qcloud_prov.h"
+#include <qrcode.h>
 
 #define PROV_QR_VERSION            "v1"
 #define APP_SERVER_PORT            8266
@@ -86,16 +85,21 @@ void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport)
         return;
     }
 
-    char *payload = NULL;
+    char *rainmaker_payload = NULL;
+    char *terminal_payload = NULL;
 
-    asprintf(&payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s&productId=%s&ver=%s&name=%s",
+    asprintf(&terminal_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s&productId=%s&ver=%s&name=%s",
              transport, esp_qcloud_get_product_id(), PROV_QR_VERSION, name);
     ESP_LOGI(TAG, "Scan this QR code from the Wechat for Provisioning.");
-    qrcode_display(payload);
+    qrcode_display(terminal_payload);
+    
+    asprintf(&rainmaker_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s%%26productId=%s%%26ver=%s%%26name=%s",
+             transport, esp_qcloud_get_product_id(), PROV_QR_VERSION, name);
     ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s",
-             "https://rainmaker.espressif.com/qrcode.html", payload);
+             "https://rainmaker.espressif.com/qrcode.html", rainmaker_payload);
 
-    ESP_QCLOUD_FREE(payload);
+    ESP_QCLOUD_FREE(rainmaker_payload);
+    ESP_QCLOUD_FREE(terminal_payload);
 }
 
 
@@ -240,11 +244,14 @@ esp_err_t esp_qcloud_prov_wait(wifi_config_t *sta_cfg, uint32_t wait_ms)
     g_wifi_event_group = xEventGroupCreate();
 
     /* Wait for Wi-Fi connection */
-    xEventGroupWaitBits(g_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED | QCLOUD_PROV_EVENT_GET_TOKEN,
+     EventBits_t bits = xEventGroupWaitBits(g_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED | QCLOUD_PROV_EVENT_GET_TOKEN,
                         false, true, pdMS_TO_TICKS(wait_ms));
+    if ((bits & QCLOUD_PROV_EVENT_GET_TOKEN) && (bits & QCLOUD_PROV_EVENT_STA_CONNECTED) ) {
+        esp_qcloud_storage_set("token", g_token, AUTH_TOKEN_MAX_SIZE);
+        esp_wifi_get_config(ESP_IF_WIFI_STA, sta_cfg);
 
-    esp_qcloud_storage_set("token", g_token, AUTH_TOKEN_MAX_SIZE);
-    esp_wifi_get_config(ESP_IF_WIFI_STA, sta_cfg);
+        return ESP_OK;
+    }
 
-    return ESP_OK;
+    return ESP_FAIL;
 }

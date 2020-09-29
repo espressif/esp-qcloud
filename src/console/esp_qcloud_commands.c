@@ -13,24 +13,37 @@
 // limitations under the License.
 
 #include <sys/param.h>
+#include "argtable3/argtable3.h"
+#include "mbedtls/base64.h"
 
 #include "esp_system.h"
 #include "esp_spi_flash.h"
-
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
-
-#include "argtable3/argtable3.h"
 #include "esp_console.h"
-#include "mbedtls/base64.h"
 
 #include "esp_qcloud_log.h"
 #include "esp_qcloud_console.h"
 
-
 #define CONFIG_QCLOUD_LOG_MAX_SIZE 1024
 
 static const char *TAG = "esp_qcloud_commands";
+
+static struct {
+    struct arg_lit *length;
+    struct arg_lit *output;
+    struct arg_lit *erase;
+    struct arg_end *end;
+} coredump_args;
+
+static struct {
+    struct arg_str *tag;
+    struct arg_str *level;
+    struct arg_str *mode;
+    struct arg_lit *status;
+    struct arg_lit *read;
+    struct arg_end *end;
+} log_args;
 
 /**
  * @brief  A function which implements version command.
@@ -68,15 +81,6 @@ static void register_version()
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
-
-static struct {
-    struct arg_str *tag;
-    struct arg_str *level;
-    struct arg_str *mode;
-    struct arg_lit *status;
-    struct arg_lit *read;
-    struct arg_end *end;
-} log_args;
 
 /**
  * @brief  A function which implements log command.
@@ -285,13 +289,6 @@ static void register_heap()
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
-
-static struct {
-    struct arg_lit *length;
-    struct arg_lit *output;
-    struct arg_lit *erase;
-    struct arg_end *end;
-} coredump_args;
 
 /**
  * @brief  A function which implements coredump command.

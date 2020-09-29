@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "esp_wifi.h"
 #include "esp_console.h"
 
@@ -25,9 +24,9 @@
 #define MDEBUG_LOG_TIMEOUT_MS              (30 * 1000)
 #define MDEBUG_LOG_QUEUE_BUFFER_MAX_SIZE   (10 * 1024)
 
-#define CONFIG_QCLOUD_TASK_DEFAULT_PRIOTY 6
-#define CONFIG_QCLOUD_TASK_PINNED_TO_CORE 0
-#define CONFIG_QCLOUD_LOG_MAX_SIZE   1024  /**< Set log length size */
+#define CONFIG_QCLOUD_TASK_DEFAULT_PRIOTY   6
+#define CONFIG_QCLOUD_TASK_PINNED_TO_CORE   0
+#define CONFIG_QCLOUD_LOG_MAX_SIZE          1024  /**< Set log length size */
 
 static const char *TAG  = "esp_qcloud_log";
 static xQueueHandle g_log_queue              = NULL;

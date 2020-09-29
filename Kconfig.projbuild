@@ -1,6 +1,6 @@
 menu "ESP QCloud Configuration"
     config QCLOUD_MASS_MANUFACTURE
-        bool "ESP Qcloud Mass Manufacture"
+        bool "ESP QCloud Mass Manufacture"
         default n
         help
             Write authentication information through flash tool
@@ -10,14 +10,14 @@ menu "ESP QCloud Configuration"
             string "ESP QCloud Factory Partition Name"
             default "fctry"
             help
-                Factory NVS Partition name which will have the Qcloud IOTHUB connectivity credentials.
+                Factory NVS Partition name which will have the QCloud IOTHUB connectivity credentials.
 
         config QCLOUD_FACTRY_PARTITION_NAMESPACE
             depends on QCLOUD_MASS_MANUFACTURE
             string "ESP QCloud Factory Partition NVS Namespace"
             default "qcloud-key"
             help
-                Factory NVS Partition name which will have the Qcloud IOTHUB connectivity credentials.
+                Factory NVS Partition name which will have the QCloud IOTHUB connectivity credentials.
 
         config QCLOUD_PRODUCT_ID
             depends on !QCLOUD_MASS_MANUFACTURE
@@ -55,7 +55,7 @@ menu "ESP QCloud Configuration"
                 This allows you to skip the project name check.
     endmenu
 
-    menu "Qcloud utils"
+    menu "QCloud utils"
         choice QCLOUD_MEM_ALLOCATION_LOCATION
             prompt "The memory location allocated by QCLOUD_MALLOC QCLOUD_CALLOC and QCLOUD_REALLOC"
             help 
@@ -75,16 +75,16 @@ menu "ESP QCloud Configuration"
                 Memory debug.
 
         config QCLOUD_MEM_DBG_INFO_MAX
-            int "QCLOUD Memory debug record max."
+            int "QCloud Memory debug record max."
             default 128
             help
-                Config QCLOUD Memory debug record max.
+                Config QCloud Memory debug record max.
 
         config QCLOUD_NVS_NAMESPACE
-            string "Namespace where data is stored in nvs"
+            string "Namespace where data is stored in NVS"
             default "qcloud_app"
             help
-                Namespace where data is stored in nvs.
+                Namespace where data is stored in NVS.
 
         config QCLOUD_REBOOT_UNBROKEN_INTERVAL_TIMEOUT
             int "Continuous reboot interval(ms)"
@@ -127,10 +127,10 @@ menu "ESP QCloud Configuration"
                 Offset of the log information partition
 
         config QCLOUD_PRINTF_ENABLE
-            bool "Output the `printf` information of the QCLOUD module"
+            bool "Output the `printf` information of the QCloud module"
             default n
             help
-                Output the `printf` information of the QCLOUD module
+                Output the `printf` information of the QCloud module
     endmenu
 
     choice QCLOUD_CONSOLE_UART_NUM

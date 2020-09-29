@@ -25,7 +25,7 @@
 #include "esp_qcloud_log.h"
 #include "esp_qcloud_storage.h"
 
-#define LOG_FLASH_FILE_MAX_NUM      2           /**< Create several files */
+#define LOG_FLASH_FILE_MAX_NUM      2                                 /**< Create several files */
 #define LOG_FLASH_FILE_MAX_SIZE     CONFIG_QCLOUD_LOG_FILE_MAX_SIZE   /**< File storage size */
 #define LOG_FLASH_STORE_KEY         "log_info"
 #define LOG_FLASH_STORE_NAMESPACE   "log_info"

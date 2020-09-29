@@ -18,11 +18,12 @@
 extern "C" {
 #endif /**< _cplusplus */
 
-#include "esp_log.h"
-#include "string.h"
-#include "stdlib.h"
-#include "stdio.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
+
+#include "esp_log.h"
 
 #include "esp_qcloud_utils.h"
 #include "esp_qcloud_mem.h"
@@ -64,9 +65,9 @@ typedef enum {
  * @brief Type of log storage queue
  */
 typedef struct {
-    uint16_t size;          /**< The length of the log data */
+    uint16_t size;              /**< The length of the log data */
     esp_qcloud_log_type_t type; /**< Ways to send logs */
-    char data[0];           /**< Log data */
+    char data[0];               /**< Log data */
 } esp_qcloud_log_queue_t;
 
 /**

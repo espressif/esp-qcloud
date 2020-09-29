@@ -58,7 +58,7 @@
 # <span id = "compileprepare">2. IDF 环境搭建</span>
 
 - 可以参考 [ESP-IDF编程指南-快速入门](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/index.html#get-started-setup-toolchain) 快速完成工具链与环境的搭建
- - 在构建工程之前需将 `ESP-IDF` 切换到 `release/v4.2 分支` 
+- 在构建工程之前需将 `ESP-IDF` 切换到 `release/v4.2 分支` 
 
     ```shell
     cd  $IDF_PATH 
@@ -113,7 +113,7 @@
 
     - **更改 `partitions`**
 
-        1. **进入 menuconfig 配置界面**
+        1. **进入 `menuconfig` 配置界面**
 
             ```shell
             idf.py menuconfig
@@ -135,9 +135,9 @@
 
    当使用云平台时，你需要在 [IoT Explorer](https://console.cloud.tencent.com/iotexplorer) 获取认证信息，认证信息通常为 `产品ID (PRODUCT_ID)` 、 `设备名称 (DEVICE_NAME) `、 `设备密钥 (DEVICE_SECRET) `，可以参考 [智能灯文档](./examples/led_light/README.md) 中 `烧录认证信息` 或 [IoT Explorer 官方文档](https://cloud.tencent.com/document/product/1081/34739) 进行平台参数设置、获取。获取到认证信息时，可以选择下述任意一种方式烧录。
 
-   - **通过 menuconfig 配置界面**
+   - **通过 `menuconfig` 配置界面**
 
-        1. **进入 menuconfig 配置界面**
+        1. **进入 `menuconfig` 配置界面**
 
             ```shell
             idf.py menuconfig
@@ -156,7 +156,7 @@
             UART for console input (UART0)  --->
             ```
 
-            - 不开启 `ESP Qcloud Mass Manufacture` 选项。
+            - 不开启 `ESP QCloud Mass Manufacture` 选项。
 
         3. **填入你的信息**
 
@@ -165,7 +165,7 @@
 
     - **通过量产工具配置**
     
-        请参考量产工具目录下的 [文档](./cofig/mass_mfg/README.md) ，另外需要 <b>开启</b> `ESP Qcloud Mass Manufacture` 选项。
+        请参考量产工具目录下的 [文档](./cofig/mass_mfg/README.md) ，另外需要 <b>开启</b> `ESP QCloud Mass Manufacture` 选项。
 
 
 3. **构建项目**
@@ -231,7 +231,7 @@
 
         - 通过 `shell` 输入指令查看系统状态，例如执行 `heap` 指令，更多指令可通过 `help` 查询。
 
-        ```
+        ```shell
         esp32> heap
         I (15360) esp_qcloud_mem: (714) <esp_qcloud_log: 159> ptr: 0x3ffbd1c4, size: 16
         I (15361) esp_qcloud_mem: (716) <esp_qcloud_log_flash: 157> ptr: 0x3ffbdecc, size: 24
@@ -257,6 +257,7 @@
         I (15510) esp_qcloud_mem: esp_timer             B       22      3348    1       0       38541           <1
         I (15521) esp_qcloud_mem: wifi                  B       23      3944    11      0       234073          1
         I (15532) esp_qcloud_mem: sys_evt               B       20      596     10      0       2884            <1
+        ```
 
 - **保存调试日志**
 

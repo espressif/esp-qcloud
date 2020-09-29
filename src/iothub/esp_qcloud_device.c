@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sdkconfig.h>
 #include <string.h>
+
 #include <esp_log.h>
-#include <nvs.h>
-#include <nvs_flash.h>
 
-#include <esp_qcloud_iothub.h>
+#include "esp_qcloud_iothub.h"
 #include "esp_qcloud_utils.h"
-
-// #include "esp_qcloud_internal.h"
 
 /* Handle to maintain internal information (will move to an internal file) */
 typedef struct {
@@ -39,8 +35,10 @@ typedef struct {
 } esp_qcloud_profile_t;
 
 static esp_qcloud_profile_t *g_device_profile = NULL;
-static esp_qcloud_set_param_t esp_qcloud_set_param = NULL;
-static esp_qcloud_get_param_t esp_qcloud_get_param = NULL;
+static esp_qcloud_set_param_t g_esp_qcloud_set_param = NULL;
+static esp_qcloud_get_param_t g_esp_qcloud_get_param = NULL;
+
+static SLIST_HEAD(param_list_, esp_qcloud_param) g_param_list;
 
 static const char *TAG = "esp_qcloud_device";
 
@@ -49,8 +47,6 @@ typedef struct esp_qcloud_param {
     esp_qcloud_param_val_t value;
     SLIST_ENTRY(esp_qcloud_param) next;    //!< next command in the list
 } esp_qcloud_param_t;
-
-static SLIST_HEAD(param_list_, esp_qcloud_param) g_param_list;
 
 esp_err_t esp_qcloud_device_add_fw_version(const char *version)
 {
@@ -137,7 +133,7 @@ esp_err_t esp_qcloud_create_device()
     return ESP_OK;
 
 ERR_EXIT:
-
+    ESP_QCLOUD_FREE(g_device_profile);
     vTaskDelay(pdMS_TO_TICKS(3000));
     return ESP_FAIL;
 }
@@ -177,45 +173,10 @@ const char *esp_qcloud_get_private_key()
     return g_device_profile->private_key;
 }
 
-esp_qcloud_param_val_t esp_qcloud_bool(bool val)
-{
-    esp_qcloud_param_val_t param_val = {
-        .type = QCLOUD_VAL_TYPE_BOOLEAN,
-        .b = val
-    };
-    return param_val;
-}
-
-esp_qcloud_param_val_t esp_qcloud_int(int val)
-{
-    esp_qcloud_param_val_t param_val = {
-        .type = QCLOUD_VAL_TYPE_INTEGER,
-        .i = val
-    };
-    return param_val;
-}
-
-esp_qcloud_param_val_t esp_qcloud_float(float val)
-{
-    esp_qcloud_param_val_t param_val = {
-        .type = QCLOUD_VAL_TYPE_FLOAT,
-        .f = val
-    };
-    return param_val;
-}
-
-esp_qcloud_param_val_t esp_qcloud_str(const char *val)
-{
-    esp_qcloud_param_val_t param_val = {
-        .type = QCLOUD_VAL_TYPE_STRING,
-        .s = (char *)val
-    };
-    return param_val;
-}
-
 esp_err_t esp_qcloud_device_add_param(const char *id, esp_qcloud_param_val_type_t type)
 {
     esp_qcloud_param_t *item = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_param_t));
+
     item->id = strdup(id);
     item->value.type = type;
 
@@ -233,8 +194,8 @@ esp_err_t esp_qcloud_device_add_param(const char *id, esp_qcloud_param_val_type_
 esp_err_t esp_qcloud_device_add_cb(const esp_qcloud_get_param_t get_param_cb,
                                    const esp_qcloud_set_param_t set_param_cb)
 {
-    esp_qcloud_get_param = get_param_cb;
-    esp_qcloud_set_param = set_param_cb;
+    g_esp_qcloud_get_param = get_param_cb;
+    g_esp_qcloud_set_param = set_param_cb;
 
     return ESP_OK;
 }
@@ -268,7 +229,7 @@ esp_err_t esp_qcloud_handle_set_param(const cJSON *request_params, cJSON *reply_
                 break;
         }
 
-        err = esp_qcloud_set_param(item->string, &value);
+        err = g_esp_qcloud_set_param(item->string, &value);
         ESP_QCLOUD_ERROR_BREAK(err != ESP_OK, "<%s> esp_qcloud_set_param, id: %s",
                                esp_err_to_name(err), item->string);
     }
@@ -283,7 +244,7 @@ esp_err_t esp_qcloud_handle_get_param(const cJSON *request_data, cJSON *reply_da
     esp_qcloud_param_t *param;
     SLIST_FOREACH(param, &g_param_list, next) {
         /* Check if command starts with buf */
-        err = esp_qcloud_get_param(param->id, &param->value);
+        err = g_esp_qcloud_get_param(param->id, &param->value);
         ESP_QCLOUD_ERROR_BREAK(err != ESP_OK, "esp_qcloud_get_param, id: %s", param->id);
 
         if (param->value.type == QCLOUD_VAL_TYPE_INTEGER) {
