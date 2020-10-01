@@ -8,7 +8,7 @@
 5. [相关资源](#faq)
 
 # <span id = "Introduction">0. 介绍</span>
-`esp-qcloud` 是由 [乐鑫官方](https://www.espressif.com) 推出接入 [腾讯物联网开发平台 (IoT Explorer)](https://console.cloud.tencent.com/iotexplorer) 的开发套件 。该套件依据 `IoT Explorer` 通信协议而设计，相对于 [腾讯云物联 IoT C-SDK](https://github.com/tencentyun/qcloud-iot-sdk-embedded-c)，该套件将云平台配置、配网操作封装成接口，简化整体流程，只需完成简单的调用，即可完成配网、连接云操作。同时，该套件提供了丰富的调试工具、示例代码、量产工具供你快速完成产品开发。
+`esp-qcloud` 是由 [乐鑫官方](https://www.espressif.com) 推出接入 [腾讯物联网开发平台 (IoT Explorer)](https://console.cloud.tencent.com/iotexplorer) 的开发套件 。该套件依据 `IoT Explorer` 通信协议而设计，相对于 [腾讯云物联 IoT C-SDK](https://github.com/tencentyun/qcloud-iot-sdk-embedded-c)，该套件将云平台配置、配网操作封装成接口，简化了整体流程，只需完成简单的调用，即可完成配网、连云操作。同时，该套件提供了丰富的调试工具、示例代码、量产工具供你快速完成产品开发。
 
 - **配网方式**
 
@@ -16,32 +16,32 @@
     - [x] airkiss
     - [x] esp-touch v1
     - [x] provisioning softap
-    - [ ] <font color= #DCDCDC>esp-touch v2</font>
-    - [ ] <font color= #DCDCDC>provisioning ble</font>
+    - [ ] esp-touch v2
+    - [ ] provisioning ble
 
 - **认证方式**
 
     - [x] 密钥认证
-    - [ ] <font color= #DCDCDC>证书认证</font>
-    - [ ] <font color= #DCDCDC>动态注册</font>
+    - [ ] 证书认证
+    - [ ] 动态注册
 
 - **业务功能**
 
     - [x] 状态上报与下发
     - [x] OTA升级
-    - [ ] <font color= #DCDCDC>事件上报</font>
-    - [ ] <font color= #DCDCDC>网关</font>
+    - [ ] 事件上报
+    - [ ] 网关
 
 - **调试功能**
 
-    - [x] 日志上报服务器
-    - [x] 日志存储到 flash
-    - [x] 日志串口调试
+    - [x] 日志上报云平台
+    - [x] 日志本地存储
+    - [x] 串口调试
 
 - **生产工具**
 
-    - [x] 单一/批量bin生成
-    - [ ] <font color= #DCDCDC>加密</font>
+    - [x] 单一/批量 bin 生成
+    - [ ] 加密
 
 # <span id = "hardwareprepare">1.硬件准备</span>
 - **模组**  
@@ -70,26 +70,41 @@
 
 0. **提取项目文件**
 
-    将 `esp-qcloud` 作为 `git` 子模块，你无需在此项目中复制或编辑任何文件，可更方便的维护和更新本项目。这里以 `led_light` 为例。
+    你可以直接在 `examples` 目录下提取文件，也可以通过将 `esp-qcloud` 作为 `git` 子模块进行开发。
 
-    ```shell
-    #Copy example
-    cd ./examples
-    cp -r led_light my_led_light
-    mv my_led_light ~/my_project
-    cd ~/my_project
+    1. 直接提取开发
 
-    #Register submodule
-    git init
-    mkdir -p components
-    git submodule add https://glab.espressif.cn/technical_support/tencent/esp-qcloud
+        ```shell
+        #Copy example
+        cp -r ./examples/led_light ./examples/my_project
+        
+        #Delete unnecessary files
+        cd ./examples/my_project
+        idf.py fullclean
+        ```
 
-    #Delete unnecessary files
-    idf.py fullclean
-    ```
-<!-- git submodule add https://gitlab.espressif.cn:6688/esp-components/esp-qcloud.git components/esp-qcloud -->
+    2. 通过 `git` 管理开发
 
-<!-- git submodule add https://github.com/espressif/esp-qcloud.git components/qcloud-->
+        将 `esp-qcloud` 作为 `git` 子模块进行开发，无需在此项目中复制或编辑任何文件，可更方便的维护和更新本项目。
+
+        ```shell
+        #Copy example
+        cp -r ./examples/led_light ~/my_project
+        cd ~/my_project
+
+        #Register submodule
+        git init
+        mkdir -p components
+
+        #Choice 1
+        git submodule add https://github.com/espressif/esp-qcloud.git components/qcloud
+        #Choice 2
+        git submodule add https://gitee.com/espressifsystems/esp-qcloud.git components/qcloud
+
+        #Delete unnecessary files
+        idf.py fullclean
+        ```
+
 
 1. **配置芯片**
 
@@ -98,7 +113,7 @@
     - **查看当前芯片信息**
 
         ```shell
-        python $IDF_PATH/components/esptool_py/esptool/esptool.py flash_id
+        $IDF_PATH/components/esptool_py/esptool/esptool.py flash_id
         ```
 
     - **设置编译时目标芯片**
@@ -111,7 +126,7 @@
         idf.py set-target esp32s2
         ```
 
-    - **更改 `partitions`**
+    - **更改 `Partition`**
 
         1. **进入 `menuconfig` 配置界面**
 
@@ -128,14 +143,14 @@
             [*] Generate an MD5 checksum for the partition table
             ```
 
-            - `Custom partition CSV file` 中即可编辑 CSV 文件。
+            - `Custom partition CSV file` 中即可编辑 `CSV` 文件。
 
 
 2. **烧录认证信息[可选]**
 
-   当使用云平台时，你需要在 [IoT Explorer](https://console.cloud.tencent.com/iotexplorer) 获取认证信息，认证信息通常为 `产品ID (PRODUCT_ID)` 、 `设备名称 (DEVICE_NAME) `、 `设备密钥 (DEVICE_SECRET) `，可以参考 [智能灯文档](./examples/led_light/README.md) 中 `烧录认证信息` 或 [IoT Explorer 官方文档](https://cloud.tencent.com/document/product/1081/34739) 进行平台参数设置、获取。获取到认证信息时，可以选择下述任意一种方式烧录。
+   当使用云平台时，你需要在 [IoT Explorer](https://console.cloud.tencent.com/iotexplorer) 获取认证信息，认证信息通常为 `产品 ID (PRODUCT_ID)` 、 `设备名称 (DEVICE_NAME) `、 `设备密钥 (DEVICE_SECRET) `，可参考 [智能灯文档](./examples/led_light/README.md) 中 `烧录认证信息` 或 [IoT Explorer 官方文档](https://cloud.tencent.com/document/product/1081/34739) 进行平台参数设置、获取。获取到认证信息时，可以选择下述任意一种方式烧录。
 
-   - **通过 `menuconfig` 配置界面**
+   - **通过 `menuconfig` 配置**
 
         1. **进入 `menuconfig` 配置界面**
 
@@ -146,21 +161,21 @@
         2. **选择 `ESP QCloud Config` 选项**
 
             ```shell
-            [ ] ESP Qcloud Mass Manufacture
+            [ ] ESP QCloud Mass Manufacture
             (PRODUCT_ID) Product ID
             (DEVICE_NAME) Device Name
             (DEVICE_SECRET) Device Secret
             ESP QCloud OTA Config  --->
-            Qcloud utils  --->
+            QCloud utils  --->
             ESP QCloud Log Config  --->
             UART for console input (UART0)  --->
             ```
 
-            - 不开启 `ESP QCloud Mass Manufacture` 选项。
+            - <b>不开启</b> `ESP QCloud Mass Manufacture` 选项。
 
         3. **填入你的信息**
 
-            填写`产品 ID (PRODUCT_ID) `、 `设备名称 (DEVICE_NAME) `、 `设备密钥 (DEVICE_SECRET) `。
+            填写 `产品 ID (PRODUCT_ID) `、 `设备名称 (DEVICE_NAME) `、 `设备密钥 (DEVICE_SECRET) `。
         
 
     - **通过量产工具配置**
@@ -192,7 +207,7 @@
     idf.py flash monitor
     ```
     
-    - **擦除 flash**
+    - **擦除 Flash**
 
     ```shell
     idf.py erase_flash
@@ -202,7 +217,7 @@
 
 - **串口调试**
 
-    串口调试允许通过串口查看当前设备信息，如需开启方法如下：
+    串口调试允许通过串口查看当前设备信息，开启方法如下：
 
     1. **进入 `menuconfig` 配置界面**
 
@@ -219,7 +234,7 @@
         [*] The device will be in debug mode
         ``` 
 
-        - `The device will be in debug mode`，该选项配置设备的调试是否开启。
+        - <b>开启</b> `The device will be in debug mode` 选项。
 
     3. **查看调试信息**
 
@@ -229,7 +244,7 @@
         I (31091) esp_qcloud_utils: System information sta_mac: 24:6f:28:80:3f:14, channel: [10/2], rssi: -40, free_heap: 181128, minimum_heap: 161540
         ```
 
-        - 通过 `shell` 输入指令查看系统状态，例如执行 `heap` 指令，更多指令可通过 `help` 查询。
+        - 通过 `shell` 输入指令可查看相关信息，例如执行 `heap` 指令，将打印系统运行状态，更多指令可通过 `help` 查询。
 
         ```shell
         esp32> heap
@@ -261,7 +276,7 @@
 
 - **保存调试日志**
 
-    该功能可将日志保存在 `flash`。你需要构造 `esp_qcloud_log_config_t` 结构体，通过 `esp_qcloud_log_init()` 设置日志等级。
+    该功能可将日志保存在 `Flash`。你需要构造 `esp_qcloud_log_config_t` 结构体，通过 `esp_qcloud_log_init()` 设置日志等级。
 
     ```c
     esp_qcloud_log_config_t log_config = {

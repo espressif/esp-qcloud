@@ -21,7 +21,7 @@
     你需要在 [腾讯物联网开发平台 (IoT Explorer)](https://console.cloud.tencent.com/iotexplorer) 新建项目，随后即可新建产品。
 
 <div align="center">  
-<img src="./_static/qcloud_01.png" width = "500" height = "450" alt="云平台_新建产品" align=center >
+<img src="./_static/qcloud_01.png" width = "500" height = "463" alt="云平台_新建产品" align=center >
 </div>
 
 2. **数据模板**
@@ -29,7 +29,7 @@
     通过 `标准功能-导入 JSON ` 添加标准属性，[点击查看 light 的 json 文件](./data_template_light.json) 。
 
 <div align="center">  
-<img src="./_static/qcloud_02.png" width = "600" height = "390" alt="云平台_导入json" align=center >
+<img src="./_static/qcloud_02.png" width = "600" height = "407" alt="云平台_导入json" align=center >
 </div>
 
 3. **设备开发**
@@ -41,7 +41,7 @@
     此处可配置设备的首选、次选配网方案。当前例程支持乐鑫方案下的 `Soft Ap`、 `Smart Config`、 `AirKiss`。
 
 <div align="center">  
-<img src="./_static/qcloud_03.png" width = "600" height = "330" alt="云平台_交互开发" align=center >
+<img src="./_static/qcloud_03.png" width = "600" height = "336" alt="云平台_交互开发" align=center >
 </div>
 
 5. **设备调试**
@@ -49,7 +49,7 @@
     此处新建一个设备，随后可点击该设备查看 `产品 ID (PRODUCT_ID)`、`设备名称 (DEVICE_NAME)`、 `设备密钥 (DEVICE_SECRET)`。
 
 <div align="center">  
-<img src="./_static/qcloud_04.png" width = "600" height = "350" alt="云平台_设备调试" align=center >
+<img src="./_static/qcloud_04.png" width = "600" height = "356" alt="云平台_设备调试" align=center >
 </div>
 
 6. **批量生产**
@@ -57,7 +57,7 @@
     此处可以查看 `配网二维码`。
 
 <div align="center">  
-<img src="./_static/qcloud_05.png" width = "600" height = "300" alt="云平台_配网二维码" align=center >
+<img src="./_static/qcloud_05.png" width = "600" height = "331" alt="云平台_配网二维码" align=center >
 </div>
 
 >该二维码与随后设备端生成的二维码功能相同。
@@ -146,7 +146,7 @@
     >该二维码与云端生成的二维码功能相同。
 
     <div align="center">  
-    <img src="./_static/device_shell_01.png" width = "440" height = "180" alt="设备端_配网提示_shell" align=center >
+    <img src="./_static/device_shell_01.png" width = "440" height = "191" alt="设备端_配网提示_shell" align=center >
     </div>
 
     1. **立即绑定**
@@ -154,7 +154,7 @@
         如果一切正常，扫描二维码后将看到下述界面。
 
     <div align="center">  
-    <img src="./_static/app_01.jpg" width = "200" height = "420" alt="小程序_立即绑定" align=center >
+    <img src="./_static/app_01.jpg" width = "200" height = "425" alt="小程序_立即绑定" align=center >
     </div>
 
     2. **开始配网**
@@ -164,7 +164,7 @@
             一键配网使用的是乐鑫 `esp-touch v1` 协议。
 
         <div align="center">  
-        <img src="./_static/app_smartconfig_01.jpg" width = "200" height = "420" alt="小程序_一键配网_01" align=center >
+        <img src="./_static/app_smartconfig_01.jpg" width = "200" height = "425" alt="小程序_一键配网_01" align=center >
         </div>
 
         - **微信配网**
@@ -172,7 +172,7 @@
             微信一键配网使用的是腾讯 `AirKiss` 协议。
 
         <div align="center">  
-        <img src="./_static/app_smartconfig_02.jpg" width = "200" height = "420" alt="小程序_一键配网_02" align=center >
+        <img src="./_static/app_smartconfig_02.jpg" width = "200" height = "425" alt="小程序_一键配网_02" align=center >
         </div>
 
         - **热点配网( Soft Ap 配网)**
@@ -180,11 +180,11 @@
             热点配网需要填入设备的 `SSID` 信息，可从监视器中查看。
 
         <div align="center">  
-        <img src="./_static/app_softap_01.jpg" width = "200" height = "420" alt="小程序_热点配网_01" align=center >
+        <img src="./_static/app_softap_01.jpg" width = "200" height = "425" alt="小程序_热点配网_01" align=center >
         </div>
         
         <div align="center">  
-        <img src="./_static/app_softap_02.jpg" width = "200" height = "420" alt="小程序_热点配网_02" align=center >
+        <img src="./_static/app_softap_02.jpg" width = "200" height = "425" alt="小程序_热点配网_02" align=center >
         </div>
 
     3. **等待配网结果**
@@ -192,7 +192,7 @@
         成功后可在主页查看设备信息。
 
         <div align="center">  
-        <img src="./_static/app_02.jpg" width = "200" height = "420" alt="小程序_配网成功" align=center >
+        <img src="./_static/app_02.jpg" width = "200" height = "425" alt="小程序_配网成功" align=center >
         </div>
 
     配网成功后，小程序与你的设备将形成绑定关系，同时会记录 `Wi-Fi` 的相关信息。如果想清除配网信息，可使用下述两种方法。
@@ -207,7 +207,7 @@
 
     - **使用快速复位按键**
 
-        在乐鑫提供的开发板中，可快速重复按下 `RST` 按键 5 次。如使用芯片，快速上电、掉电 5 次也可完成此操作。当前例程可修改复位次数及时间，方法如下：
+        在乐鑫提供的开发板中，可快速重复按下 `RST` 按键 5 次。若使用芯片，快速上电、掉电 5 次也可完成此操作。当前例程可修改复位次数及时间，方法如下：
 
         1. **进入 `menuconfig` 配置界面**
 
@@ -268,7 +268,7 @@
         该页面可查看所有设备信息，当设备不在线时图标为灰色。
 
     <div align="center">  
-    <img src="./_static/app_03.jpg" width = "200" height = "420" alt="小程序_主页" align=center >
+    <img src="./_static/app_03.jpg" width = "200" height = "425" alt="小程序_主页" align=center >
     </div>
 
     - **控制**
@@ -276,7 +276,7 @@
         点击在线设备，可以实现亮度、颜色、状态的控制。
 
     <div align="center">  
-    <img src="./_static/app_05.jpg" width = "200" height = "420" alt="小程序_下行控制" align=center >
+    <img src="./_static/app_05.jpg" width = "200" height = "425" alt="小程序_下行控制" align=center >
     </div>
 
 6. **OTA 升级**
@@ -289,7 +289,7 @@
 
         固件版本需与实际版本一致。
         <div  align="center">  
-        <img src="./_static/qcloud_08.png" width = "800" height = "327" alt="云平台_上传固件" align=center >
+        <img src="./_static/qcloud_08.png" width = "600" height = "215" alt="云平台_上传固件" align=center >
         </div>
 
     3. **下发固件**
@@ -299,23 +299,23 @@
         - **平台下发**
 
             <div  align="center">  
-            <img src="./_static/qcloud_06.png" width = "800" height = "350" alt="云平台_下发固件" align=center >
+            <img src="./_static/qcloud_06.png" width = "600" height = "234" alt="云平台_下发固件" align=center >
             </div>
 
             等待几分钟后，即可查询到状态。
             <div  align="center">  
-            <img src="./_static/qcloud_07.png" width = "800" height = "350" alt="云平台_升级成功" align=center >
+            <img src="./_static/qcloud_07.png" width = "600" height = "240" alt="云平台_升级成功" align=center >
             </div>
 
         - **小程序下发**
 
             <div  align="center">  
-            <img src="./_static/app_04.jpg" width = "200" height = "420" alt="小程序_下发固件" align=center >
+            <img src="./_static/app_04.jpg" width = "200" height = "425" alt="小程序_下发固件" align=center >
             </div>
 
             等待几分钟后，即可查询到状态。
             <div  align="center">  
-            <img src="./_static/app_06.jpg" width = "200" height = "420" alt="小程序_升级成功" align=center >
+            <img src="./_static/app_06.jpg" width = "200" height = "425" alt="小程序_升级成功" align=center >
             </div>
 
     4. **版本回滚与校验【可选】**
@@ -419,11 +419,11 @@
     1. **开启日志**
 
     <div  align="center">  
-    <img src="./_static/qcloud_09.png" width = "800" height = "350" alt="云平台_开启调试日志" align=center >
+    <img src="./_static/qcloud_09.png" width = "600" height = "289" alt="云平台_开启调试日志" align=center >
     </div>
     
     2. **查看日志**
 
     <div  align="center">  
-    <img src="./_static/qcloud_10.png" width = "800" height = "350" alt="云平台_查看调试日志" align=center >
+    <img src="./_static/qcloud_10.png" width = "600" height = "256" alt="云平台_查看调试日志" align=center >
     </div>
