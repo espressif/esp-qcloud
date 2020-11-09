@@ -53,6 +53,12 @@ menu "ESP QCloud Configuration"
             default n
             help
                 This allows you to skip the project name check.
+
+        config QCLOUD_USE_HTTPS_UPDATA
+            bool "Use https updata"
+            default n
+            help
+                This allows you to use https updata firmware.
     endmenu
 
     menu "QCloud utils"
