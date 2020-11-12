@@ -79,7 +79,6 @@ esp_err_t esp_qcloud_wifi_start(const wifi_config_t *conf)
 {
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, (wifi_config_t *)conf));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
-    ESP_ERROR_CHECK(esp_wifi_connect());
 
     /* Wait for success event */
     xEventGroupWaitBits(s_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED, true, true, portMAX_DELAY);

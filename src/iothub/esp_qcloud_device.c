@@ -253,7 +253,6 @@ esp_err_t esp_qcloud_handle_get_param(const cJSON *request_data, cJSON *reply_da
             cJSON_AddNumberToObject(reply_data, param->id, param->value.b);
         } else if (param->value.type == QCLOUD_VAL_TYPE_STRING) {
             cJSON_AddStringToObject(reply_data, param->id, param->value.s);
-            ESP_QCLOUD_FREE(param->value.s);
         } else if (param->value.type == QCLOUD_VAL_TYPE_FLOAT) {
             cJSON_AddNumberToObject(reply_data, param->id, param->value.f);
         }
