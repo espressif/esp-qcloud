@@ -47,8 +47,7 @@
 ## 批量 bin 生成
 
 量产时采用单 bin 生成工具会极大影响生产效率，因此采用 IDF 中的量产工具，该量产工具也是基于 NVS 分区生成工具的扩充。
-
-> 注： `multipule_mfg_config.csv` 为参数区配置文件，该文件已完成对 `IoT Explorer` 的配置，你无需配置其他信息。
+`multipule_mfg_config.csv` 为参数区配置文件，该文件已完成对 `IoT Explorer` 的配置，你无需配置其他信息。
 
 1. 将 `multipule_mfg_values.csv` 复制为 `my_multipule_mfg_values.csv` 
 
@@ -58,6 +57,8 @@
 
 2. 对 `my_multipule_mfg_values.csv` 文件进行修改，填写希望用于量产的 `PRODUCT_ID_x`、`DEVICE_NAME_x`、 `DEVICE_SECRET_x` 信息。 
 
+    每一行代表了一组设备信息，第一列为 `id` 信息，不会生成到对应的 NVS 分区中，仅用作标号。
+
     ```csv
     id,product_id,device_name,device_secret
     1,PRODUCT_ID_1,DEVICE_NAME_1,DEVICE_SECRET_1
@@ -65,7 +66,7 @@
     3,PRODUCT_ID_3,DEVICE_NAME_3,DEVICE_SECRET_3
     ```
 
-> 注：每一行代表了一组设备信息，第一列为 `id` 信息，不会生成到对应的 NVS 分区中，仅用作标号。
+> 注：tools 目录下的工具可快速完成 `my_multipule_mfg_values.csv` 文件的生成，建议使用该方式。
 
 3. 批量生成 `NVS分区bin文件`。
 
@@ -74,5 +75,3 @@
     ```
 
     其中 `qcloud` 为生成的批量 bin 的前缀名称。执行完成后，会在当前目录下生成 `bin` 目录，里面保存了所有可用于量产的 NVS 分区 `bin`。
-
-> 注：当前不知道 `IoT Explorer` 能否批量导出 `PRODUCT_ID` 、`DEVICE_NAME` 、`DEVICE_SECRET`，如有需要可以编写特定脚本来生成 `my_multipule_mfg_values.csv`。
