@@ -444,7 +444,7 @@ esp_err_t esp_qcloud_iothub_bind(const char *token)
 esp_err_t esp_qcloud_iothub_start()
 {
     esp_err_t err = ESP_FAIL;
-    char token[AUTH_TOKEN_MAX_SIZE] = {0};
+    char token[AUTH_TOKEN_MAX_SIZE + 1] = {0};
 
     if (esp_qcloud_storage_get("token", token, AUTH_TOKEN_MAX_SIZE) == ESP_OK) {
         esp_qcloud_iothub_bind(token);
