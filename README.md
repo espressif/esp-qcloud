@@ -199,6 +199,18 @@
     idf.py fullclean
     ```
 
+    - **性能选择**
+
+        通过在编译时传递 `PERF` 定义来决定开启的性能。未指定参数时将使用 `defaults` 配置，关于性能的说明，请参考 [性能说明文档](./docs/ESP32PerformanceOptions.md)。
+
+    ```shell
+    #high performance
+    idf.py menuconfig -D PERF="hight_perf"
+
+    #low performance
+    idf.py menuconfig -D PERF="low_perf"
+    ```
+
 3. **运行项目**
 
     - **下载、运行工程**

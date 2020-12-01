@@ -26,7 +26,12 @@ endif()
 set(EXTRA_COMPONENT_DIRS ${QCLOUD_PATH} 
                          ${QCLOUD_PATH}/examples/common_components/led
                          ${QCLOUD_PATH}/examples/common_components/button)
-set(SDKCONFIG_DEFAULTS ${QCLOUD_PATH}/config/sdkconfig_defaults/sdkconfig.defaults.${IDF_TARGET})
+
+# Performance Options
+if(NOT DEFINED PERF)
+    set(PERF "defaults")
+endif()
+set(SDKCONFIG_DEFAULTS ${QCLOUD_PATH}/config/sdkconfig_defaults/sdkconfig.${PERF}.${IDF_TARGET})
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 string(REGEX REPLACE ".*/\(.*\)" "\\1" CURDIR ${CMAKE_CURRENT_SOURCE_DIR})
