@@ -38,13 +38,17 @@
 #define QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS         8883
 #define QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS       1883
 
+#define QCLOUD_IOTHUB_BINDING_TIMEOUT              40000
+
 ESP_EVENT_DEFINE_BASE(QCLOUD_EVENT);
 
 typedef enum {
     IOTHUB_EVENT_BOND_RELAY        = BIT0,
-    IOTHUB_EVENT_REPORT_INFO_REPLY = BIT1,
-    IOTHUB_EVENT_GET_STATUS_REPLY  = BIT2,
-    IOTHUB_EVENT_REPORT_REPLY      = BIT3,
+    IOTHUB_EVENT_BIND_SUCCESS      = BIT1,
+    IOTHUB_EVENT_BIND_FAIL         = BIT2,
+    IOTHUB_EVENT_REPORT_INFO_REPLY = BIT3,
+    IOTHUB_EVENT_GET_STATUS_REPLY  = BIT4,
+    IOTHUB_EVENT_REPORT_REPLY      = BIT5,
 } iot_hub_event_t;
 
 typedef esp_err_t (*esp_qcloud_property_func_t)(const cJSON *request_data, cJSON *reply_data);
@@ -395,25 +399,46 @@ static void esp_qcloud_iothub_bond_callback(const char *topic, void *payload, si
     if (!strcmp(method, "unbind_device")) {
         esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE, NULL, 0, portMAX_DELAY);
     } else if (!strcmp(method, "app_bind_token_reply")) {
-        xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BOND_RELAY);
-        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOND_DEVICE, NULL, 0, portMAX_DELAY);
-        esp_qcloud_storage_erase("token");
+        const int result_code = cJSON_GetObjectItem(root_json, "code")->valueint;
+        if(0 == result_code){
+            xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS);
+            esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOND_DEVICE, NULL, 0, portMAX_DELAY);
+        } else {
+            esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION, NULL, 0, portMAX_DELAY);
+        }
     }
 
 EXIT:
     cJSON_Delete(root_json);
 }
 
-esp_err_t esp_qcloud_iothub_bind(const char *token)
+static esp_err_t esp_qcloud_iothub_register_service()
 {
     esp_err_t err = ESP_FAIL;
-    cJSON *data_json = NULL;
 
     err = esp_qcloud_iothub_subscribe("service", esp_qcloud_iothub_bond_callback);
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_iothub_subscribe");
 
+    return err;
+}
+
+static void bind_timercb(TimerHandle_t timer)
+{
+    ESP_LOGE(TAG, "bind time out");
+    esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION, NULL, 0, portMAX_DELAY);
+    xTimerDelete(timer, 0);
+}
+
+esp_err_t esp_qcloud_iothub_bind(const char *token, uint32_t timeout)
+{
+    esp_err_t err = ESP_FAIL;
+    cJSON *data_json = NULL;
+
     data_json = cJSON_CreateObject();
     cJSON_AddStringToObject(data_json, "token", token);
+
+    TimerHandle_t bind_timer = xTimerCreate("bind_timer", pdMS_TO_TICKS(QCLOUD_IOTHUB_BINDING_TIMEOUT), false, NULL, bind_timercb);
+    xTimerStart(bind_timer, 0);
 
 #ifdef ESP_QCLOUD_IOTHUB_BIND_RETRY
 
@@ -431,6 +456,9 @@ esp_err_t esp_qcloud_iothub_bind(const char *token)
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "<%s> esp_qcloud_iothub_publish", esp_err_to_name(err));
 #endif
 
+    xEventGroupWaitBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS, true, true, portMAX_DELAY);
+    xTimerDelete(bind_timer, 0);
+
     data_json = cJSON_CreateObject();
     cJSON_AddStringToObject(data_json, "module_hardinfo", CONFIG_IDF_TARGET);
     cJSON_AddStringToObject(data_json, "module_softinfo", esp_get_idf_version());
@@ -446,8 +474,11 @@ esp_err_t esp_qcloud_iothub_start()
     esp_err_t err = ESP_FAIL;
     char token[AUTH_TOKEN_MAX_SIZE + 1] = {0};
 
+    err = esp_qcloud_iothub_register_service();
+    ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_iothub_register_service");
+
     if (esp_qcloud_storage_get("token", token, AUTH_TOKEN_MAX_SIZE) == ESP_OK) {
-        esp_qcloud_iothub_bind(token);
+        esp_qcloud_iothub_bind(token, QCLOUD_IOTHUB_BINDING_TIMEOUT);
     }
 
     err = esp_qcloud_iothub_register_log();

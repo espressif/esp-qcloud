@@ -78,6 +78,12 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             esp_restart();
             break;
 
+        case QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION:
+            ESP_LOGW(TAG, "Device bind fail");
+            esp_qcloud_storage_erase(CONFIG_QCLOUD_NVS_NAMESPACE);
+            esp_restart();
+            break;
+
         default:
             ESP_LOGW(TAG, "Unhandled QCloud Event: %d", event_id);
     }
