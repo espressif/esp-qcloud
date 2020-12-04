@@ -54,6 +54,7 @@ typedef enum {
     QCLOUD_EVENT_IOTHUB_INIT_DONE = 1,    /**< QCloud core Initialisation Done */
     QCLOUD_EVENT_IOTHUB_BOND_DEVICE,      /**< QCloud bind device */
     QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE,    /**< QCloud unbind device */
+    QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION,   /**< QCloud bind exception */
     QCLOUD_EVENT_LOG_FLASH_FULL,          /**< QCloud log storage full */
 } esp_qcloud_event_t;
 
@@ -262,7 +263,7 @@ esp_err_t esp_qcloud_iothub_stop(void);
  *     - ESP_OK: succeed
  *     - others: fail
  */
-esp_err_t esp_qcloud_iothub_bind(const char *token);
+esp_err_t esp_qcloud_iothub_bind(const char *token, uint32_t timeout);
 
 /**
  * @brief Get Qcloud service status.
