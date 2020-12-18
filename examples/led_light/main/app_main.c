@@ -118,6 +118,11 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
     esp_qcloud_prov_smartconfig_start(SC_TYPE_ESPTOUCH_AIRKISS);
 #endif
 
+#ifdef CONFIG_LIGHT_PROVISIONING_BLECONFIG
+    char local_name[32 + 1] = CONFIG_LIGHT_PROVISIONING_BLECONFIG_NAME;
+    esp_qcloud_prov_bleconfig_start(BLECONFIG_TYPE_ESPRESSIF_TENCENT, local_name);
+#endif
+
     ESP_ERROR_CHECK(esp_qcloud_prov_wait(wifi_cfg, wait_ms));
 
 #ifdef CONFIG_LIGHT_PROVISIONING_SMARTCONFIG

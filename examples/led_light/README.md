@@ -175,7 +175,7 @@
         <img src="./_static/app_smartconfig_02.jpg" width = "200" height = "425" alt="小程序_一键配网_02" align=center >
         </div>
 
-        - **热点配网( Soft Ap 配网)**
+        - **热点配网( SoftAp 配网)**
 
             热点配网需要填入设备的 `SSID` 信息，可从监视器中查看。
 
@@ -185,6 +185,18 @@
         
         <div align="center">  
         <img src="./_static/app_softap_02.jpg" width = "200" height = "425" alt="小程序_热点配网_02" align=center >
+        </div>
+
+        - **蓝牙辅助配网( BLE 配网)**
+
+            蓝牙辅助配网的 `local name` 默认为 `QCloud`。
+
+        <div align="center">  
+        <img src="./_static/app_ble_01.jpg" width = "200" height = "425" alt="小程序_蓝牙配网_01" align=center >
+        </div>
+        
+        <div align="center">  
+        <img src="./_static/app_ble_02.jpg" width = "200" height = "425" alt="小程序_蓝牙配网_02" align=center >
         </div>
 
     3. **等待配网结果**
@@ -253,13 +265,17 @@
             ```shell
             [*] Enable SmartConfig's smart network configuration method
             [*] Enable SoftAP's network configuration method
+            [*] Enable BLE's network configuration method
             (tcloud_XXX) SoftAP ssid
             ()      SoftAP password
+            ()  SoftAP password
+            (Qcloud) BLE name
             ```  
 
             - 当开启 `Enable SoftAP's network configuration method`，将能看到配置 `SSID`与 `PSW` 的选项。
             - 当开启 `Enable SmartConfig's smart network configuration method`，将默认同时启动 `esp-touch v1` 与 `AirKiss` 协议。
-            >为了能够正常配网，至少需要保证一项的开启，当同时开启所有配网方式，配网速度将受到一定的影响。
+            - 当开启 `Enable BLE's network configuration method`，将能看到配置 `BLE name`。
+            >为了能够正常配网，至少需要保证一项的开启，当前支持三种配网同时开启。当同时开启，配网速度将受到一定的影响。
 
 5. **控制**
 
@@ -376,7 +392,7 @@
         
     3. **查看调试信息**
 
-        - 该例程将默认 10s 打印一次运行状态。
+        - 该例程默认 10s 打印一次运行状态。
 
         ```shell
         I (31091) esp_qcloud_utils: System information sta_mac: 24:6f:28:80:3f:14, channel: [10/2], rssi: -40, free_heap: 181128, minimum_heap: 161540

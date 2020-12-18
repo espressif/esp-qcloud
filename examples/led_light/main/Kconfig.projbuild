@@ -95,6 +95,13 @@ menu "Light provisioning network selection"
             help
                 "Enable SoftAP's network configuration method"
 
+        config LIGHT_PROVISIONING_BLECONFIG
+            depends on IDF_TARGET_ESP32
+            bool "Enable BLE's network configuration method"
+            default y
+            help
+                "Enable BLE's network configuration method"
+
         config LIGHT_PROVISIONING_SOFTAPCONFIG_SSID
             depends on LIGHT_PROVISIONING_SOFTAPCONFIG
             string "SoftAP ssid"
@@ -109,6 +116,13 @@ menu "Light provisioning network selection"
             help
                 WiFi password (WPA or WPA2) for the example to use.
                 Can be left blank if the network has no security set.
+
+        config LIGHT_PROVISIONING_BLECONFIG_NAME
+            depends on LIGHT_PROVISIONING_BLECONFIG
+            string "BLE name"
+            default "Qcloud"
+            help
+                BLE for the phone to connect to.
     endmenu
 
     config LIGHT_REBOOT_UNBROKEN_COUNT_RESET
