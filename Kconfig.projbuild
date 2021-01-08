@@ -61,7 +61,7 @@ menu "ESP QCloud Configuration"
                 This allows you to use https updata firmware.
     endmenu
 
-    menu "QCloud utils"
+    menu "ESP QCloud utils"
         choice QCLOUD_MEM_ALLOCATION_LOCATION
             prompt "The memory location allocated by QCLOUD_MALLOC QCLOUD_CALLOC and QCLOUD_REALLOC"
             help 
@@ -81,6 +81,7 @@ menu "ESP QCloud Configuration"
                 Memory debug.
 
         config QCLOUD_MEM_DBG_INFO_MAX
+            depends on QCLOUD_MEM_DEBUG
             int "QCloud Memory debug record max."
             default 128
             help
