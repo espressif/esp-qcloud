@@ -68,10 +68,10 @@ void *log_info_storage_get(const char *key)
     }
 
     if ((err = nvs_get_blob(handle, key, NULL, &required_size)) == ESP_OK) {
-        value = ESP_QCLOUD_CALLOC(required_size + 1, 1); /* + 1 for NULL termination */
+        value = ESP_QCLOUD_LOG_CALLOC(required_size + 1, 1); /* + 1 for NULL termination */
         nvs_get_blob(handle, key, value, &required_size);
     } else if ((err = nvs_get_str(handle, key, NULL, &required_size)) == ESP_OK) {
-        value = ESP_QCLOUD_CALLOC(required_size + 1, 1); /* + 1 for NULL termination */
+        value = ESP_QCLOUD_LOG_CALLOC(required_size + 1, 1); /* + 1 for NULL termination */
         nvs_get_str(handle, key, value, &required_size);
     }
 
@@ -154,7 +154,7 @@ esp_err_t esp_qcloud_log_flash_init()
     g_log_info = log_info_storage_get(LOG_FLASH_STORE_KEY);
 
     if (!g_log_info) {
-        g_log_info = ESP_QCLOUD_CALLOC(LOG_FLASH_FILE_MAX_NUM, sizeof(flash_log_info_t));
+        g_log_info = ESP_QCLOUD_LOG_CALLOC(LOG_FLASH_FILE_MAX_NUM, sizeof(flash_log_info_t));
         err = esp_partition_erase_range(g_log_part, CONFIG_QCLOUD_LOG_PARTITION_OFFSET, LOG_FLASH_FILE_MAX_SIZE);
         ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_partition_erase_range");
     }

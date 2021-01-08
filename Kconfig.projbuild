@@ -132,7 +132,7 @@ menu "ESP QCloud Configuration"
             help
                 Offset of the log information partition
 
-        config QCLOUD_PRINTF_ENABLE
+        config QCLOUD_LOG_PRINTF_ENABLE
             bool "Output the `printf` information of the QCloud module"
             default n
             help

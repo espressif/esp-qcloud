@@ -126,7 +126,7 @@ esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_lev
         goto EXIT;
     }
 
-    response_data = ESP_QCLOUD_CALLOC(1, MAX_HTTP_OUTPUT_BUFFER);
+    response_data = ESP_QCLOUD_LOG_CALLOC(1, MAX_HTTP_OUTPUT_BUFFER);
     int response_len = esp_http_client_read_response(s_http_client, response_data, MAX_HTTP_OUTPUT_BUFFER);
     ESP_QCLOUD_ERROR_GOTO(response_len <= 0, EXIT, "Error read data, err_str: %s", strerror(errno));
 

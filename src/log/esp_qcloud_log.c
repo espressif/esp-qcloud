@@ -77,6 +77,8 @@ static ssize_t esp_qcloud_log_vprintf(const char *fmt, va_list vp)
      *
      */
     if(log_info->size == 0 ) {
+        ESP_QCLOUD_LOG_FREE(log_info->data);
+        ESP_QCLOUD_LOG_FREE(log_info);
         return 0;
     }
     
@@ -159,7 +161,7 @@ esp_err_t esp_qcloud_log_init(const esp_qcloud_log_config_t *config)
         return ESP_FAIL;
     }
 
-    g_log_config = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_log_config_t));
+    g_log_config = ESP_QCLOUD_LOG_CALLOC(1, sizeof(esp_qcloud_log_config_t));
     ESP_QCLOUD_ERROR_CHECK(!g_log_config, ESP_ERR_NO_MEM, "");
     memcpy(g_log_config, config, sizeof(esp_qcloud_log_config_t));
 
