@@ -96,6 +96,7 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
     if (esp_qcloud_storage_get("wifi_config", wifi_cfg, sizeof(wifi_config_t)) == ESP_OK) {
         return ESP_OK;
     }
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     /**< The yellow light flashes to indicate that the device enters the state of configuring the network */
     light_driver_breath_start(128, 128, 0); /**< yellow blink */

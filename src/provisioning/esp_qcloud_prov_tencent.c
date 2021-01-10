@@ -196,10 +196,11 @@ static void udp_server_task(void *pvParameters)
         ESP_LOGI(TAG, "sendto, data: %s", tx_buffer);
 
         for (int i = 0; i < 5; i++) {
-            err = sendto(udp_server_sockfd, tx_buffer, strlen(tx_buffer), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
-            ESP_QCLOUD_ERROR_BREAK(err < 0, "sendto failed, errno %d, err_str: %s", errno, strerror(errno));
-
             vTaskDelay(pdMS_TO_TICKS(i * 10));
+            err = sendto(udp_server_sockfd, tx_buffer, strlen(tx_buffer), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
+            ESP_QCLOUD_ERROR_CONTINUE(err < 0, "sendto failed, errno %d, err_str: %s", errno, strerror(errno));
+            
+            break;
         }
 
         ESP_QCLOUD_FREE(tx_buffer);
