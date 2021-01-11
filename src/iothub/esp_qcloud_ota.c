@@ -273,7 +273,7 @@ static void esp_qcloud_iothub_ota_callback(const char *topic, void *payload, siz
     if (!strcasecmp(cJSON_GetObjectItem(request_data, "type")->valuestring, "update_firmware")) {
         esp_qcloud_ota_info_t *ota_info = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_ota_info_t));
         ota_info->file_size = cJSON_GetObjectItem(request_data, "file_size")->valueint;
-        strcpy(ota_info->md5sum, strdup(cJSON_GetObjectItem(request_data, "md5sum")->valuestring));
+        strcpy(ota_info->md5sum, cJSON_GetObjectItem(request_data, "md5sum")->valuestring);
 
 #ifdef CONFIG_QCLOUD_USE_HTTPS_UPDATA
         strcpy(ota_info->url, cJSON_GetObjectItem(request_data, "url")->valuestring);     
