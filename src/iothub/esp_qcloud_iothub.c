@@ -479,6 +479,7 @@ esp_err_t esp_qcloud_iothub_start()
 
     if (esp_qcloud_storage_get("token", token, AUTH_TOKEN_MAX_SIZE) == ESP_OK) {
         esp_qcloud_iothub_bind(token, QCLOUD_IOTHUB_BINDING_TIMEOUT);
+        esp_qcloud_storage_erase("token");
     }
 
     err = esp_qcloud_iothub_register_log();
