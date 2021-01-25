@@ -36,33 +36,15 @@ extern "C" {
 #define QCLOUD_MEM_DBG_INFO_MAX CONFIG_QCLOUD_MEM_DBG_INFO_MAX
 
 #ifdef CONFIG_QCLOUD_MEM_ALLOCATION_DEFAULT
-inline void *esp_qcloud_heap_malloc(size_t size)
-{
-    return heap_caps_malloc(size, MALLOC_CAP_DEFAULT);
-}
-inline void *esp_qcloud_heap_calloc(size_t n, size_t size)
-{
-    return heap_caps_calloc(n, size, MALLOC_CAP_DEFAULT);
-}
-inline void *esp_qcloud_heap_realloc(void *ptr, size_t size)
-{
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_DEFAULT);
-}
+#define MALLOC_CAP_TYPE MALLOC_CAP_DEFAULT
 #endif
 
 #ifdef CONFIG_QCLOUD_MEM_ALLOCATION_SPIRAM
-inline void *esp_qcloud_heap_malloc(size_t size)
-{
-    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
-}
-inline void *esp_qcloud_heap_calloc(size_t n, size_t size)
-{
-    return heap_caps_calloc(n, size, MALLOC_CAP_SPIRAM);
-}
-inline void *esp_qcloud_heap_realloc(void *ptr, size_t size)
-{
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_SPIRAM);
-}
+#define MALLOC_CAP_TYPE MALLOC_CAP_DEFAULT
+#endif
+
+#ifndef MALLOC_CAP_TYPE
+#define MALLOC_CAP_TYPE MALLOC_CAP_DEFAULT 
 #endif
 
 /**
@@ -111,7 +93,7 @@ void esp_qcloud_mem_print_task(void);
  *     - NULL when any errors
  */
 #define ESP_QCLOUD_MALLOC(size) ({ \
-        void *ptr = esp_qcloud_heap_malloc(size); \
+        void *ptr = heap_caps_malloc(size, MALLOC_CAP_TYPE); \
         if (QCLOUD_MEM_DEBUG) { \
             if(!ptr) { \
                 ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Malloc size: %d, ptr: %p, heap free: %d", (int)size, ptr, esp_get_free_heap_size()); \
@@ -133,7 +115,7 @@ void esp_qcloud_mem_print_task(void);
  *     - NULL when any errors
  */
 #define ESP_QCLOUD_CALLOC(n, size) ({ \
-        void *ptr = esp_qcloud_heap_calloc(n, size); \
+        void *ptr = heap_caps_calloc(n, size, MALLOC_CAP_TYPE); \
         if (QCLOUD_MEM_DEBUG) { \
             if(!ptr) { \
                 ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Calloc size: %d, ptr: %p, heap free: %d", (int)(n) * (size), ptr, esp_get_free_heap_size()); \
@@ -155,7 +137,7 @@ void esp_qcloud_mem_print_task(void);
  *     - NULL when any errors
  */
 #define ESP_QCLOUD_REALLOC(ptr, size) ({ \
-        void *new_ptr = esp_qcloud_heap_realloc(ptr, size); \
+        void *new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_TYPE); \
         if (QCLOUD_MEM_DEBUG) { \
             if(!new_ptr) { \
                 ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
@@ -180,7 +162,7 @@ void esp_qcloud_mem_print_task(void);
  */
 #define ESP_QCLOUD_REALLOC_RETRY(ptr, size) ({ \
         void *new_ptr = NULL; \
-        while (size > 0 && !(new_ptr = esp_qcloud_heap_realloc(ptr, size))) { \
+        while (size > 0 && !(new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_TYPE))) { \
             ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
             vTaskDelay(pdMS_TO_TICKS(100)); \
         } \
