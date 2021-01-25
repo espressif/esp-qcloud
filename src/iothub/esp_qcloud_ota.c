@@ -159,42 +159,16 @@ static esp_err_t validate_image_header(esp_qcloud_ota_info_t *ota_info, esp_app_
     return ESP_OK;
 }
 
-uint8_t cal_substring(const char *str1, const char *str2) 
+static char *ota_url_https_to_http(const char *url)
 {
-    if (NULL == str1 || NULL == str2) {
-      return 0;
+    char *p = (char *)url;
+    char *result;
+
+    if(!strstr(p, "https") || strlen(p) <= 5){
+        return NULL;
     }
+    asprintf(&result, "http%s", p+5);
 
-    uint8_t count = 0;
-    uint8_t len = strlen(str1);
-    char *find = (char *)str2;
-
-    while ((find = strstr((char*)find, (char*)str1))) {
-        find += len;
-        count++;
-    }
-    return count;
-}
-
-char *str_replace(const char *str, const char *sub, const char *replace) {
-    char *pos = (char *) str;
-    int count = cal_substring(sub, str);
-
-    int size = ( strlen(str) - (strlen(sub) * count) + strlen(replace) * count) + 1;
-
-    char *result = (char *) malloc(size);
-    memset(result, '\0', size);
-    char *current;
-    while ((current = strstr(pos, sub))) {
-        int len = current - pos;
-        strncat(result, pos, len);
-        strncat(result, replace, strlen(replace));
-        pos = current + strlen(sub);
-    }
-
-    if (pos != (str + strlen(str))) {
-        strncat(result, pos, (str - pos));
-    }
     return result;
 }
 
@@ -299,15 +273,17 @@ static void esp_qcloud_iothub_ota_callback(const char *topic, void *payload, siz
     if (!strcasecmp(cJSON_GetObjectItem(request_data, "type")->valuestring, "update_firmware")) {
         esp_qcloud_ota_info_t *ota_info = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_ota_info_t));
         ota_info->file_size = cJSON_GetObjectItem(request_data, "file_size")->valueint;
-        strcpy(ota_info->md5sum, strdup(cJSON_GetObjectItem(request_data, "md5sum")->valuestring));
+        strcpy(ota_info->md5sum, cJSON_GetObjectItem(request_data, "md5sum")->valuestring);
 
 #ifdef CONFIG_QCLOUD_USE_HTTPS_UPDATA
-        strcpy(ota_info->url, strdup(cJSON_GetObjectItem(request_data, "url")->valuestring));     
+        strcpy(ota_info->url, cJSON_GetObjectItem(request_data, "url")->valuestring);     
 #else
-        strcpy(ota_info->url, str_replace(cJSON_GetObjectItem(request_data, "url")->valuestring, "https:", "http:"));
+        char *http_url = ota_url_https_to_http(cJSON_GetObjectItem(request_data, "url")->valuestring);
+        strcpy(ota_info->url, http_url);
+        ESP_QCLOUD_FREE(http_url);
 #endif
 
-        strcpy(ota_info->version, strdup(cJSON_GetObjectItem(request_data, "version")->valuestring));
+        strcpy(ota_info->version, cJSON_GetObjectItem(request_data, "version")->valuestring);
 
         xTaskCreatePinnedToCore(esp_qcloud_iotbub_ota_task, "iotbub_ota", 4 * 1024, ota_info, 1, NULL, 0);
     }
