@@ -82,7 +82,7 @@ esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type,
     esp_err_t err   = ESP_OK;
     const char *pop = NULL;
 
-    if (SOFTAPCONFIG_TYPE_TENCENT & type) {
+    if ((SOFTAPCONFIG_TYPE_ESPRESSIF & type) || (SOFTAPCONFIG_TYPE_ESPRESSIF_TENCENT & type)) {
         ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &prov_event_handler, NULL));
 
         /* Configuration for the provisioning manager */
@@ -130,7 +130,7 @@ esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type,
         wifi_prov_mgr_endpoint_register("custom-data", esp_qcloud_prov_data_handler, NULL);
     }
 
-    if (SOFTAPCONFIG_TYPE_TENCENT & type) {
+    if ((SOFTAPCONFIG_TYPE_TENCENT & type) || (SOFTAPCONFIG_TYPE_ESPRESSIF_TENCENT & type)) {
         esp_qcloud_prov_udp_server_start();
     }
 
