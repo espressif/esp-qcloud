@@ -36,7 +36,8 @@ esp_err_t esp_qcloud_timesync_start()
     ESP_LOGI(TAG, "Initializing SNTP. Using the SNTP server: %s", sntp_server_name);
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, sntp_server_name);
-
+    setenv("TZ", "CST-8", 1);
+    tzset();
     sntp_init();
     g_init_done = true;
 
