@@ -30,18 +30,15 @@ extern "C" {
 
 /**
  *@brief Configuration mdebug print enable, whether the output information according to the client needs to know.
- *       please assign CONFIG_ESP_QCLOUD_LOG_PRINTF_ENABLE a value.
- *
- * @note CONFIG_ESP_QCLOUD_LOG_PRINTF_ENABLE = 1  enable
- *       CONFIG_ESP_QCLOUD_LOG_PRINTF_ENABLE = 0  disable
+ *       please assign CONFIG_QCLOUD_LOG_PRINTF_ENABLE a value.
  */
-// #define CONFIG_ESP_QCLOUD_LOG_PRINTF_ENABLE
-#ifdef CONFIG_ESP_QCLOUD_LOG_PRINTF_ENABLE
+#ifdef CONFIG_QCLOUD_LOG_PRINTF_ENABLE
 #define ESP_QCLOUD_LOG_PRINTF(fmt, ...) printf("D [%s, %d]: " fmt, TAG, __LINE__, __VA_ARGS__)
 #else
 #define ESP_QCLOUD_LOG_PRINTF(fmt, ...)
 #endif
 
+#define ESP_QCLOUD_LOG_CALLOC calloc
 #define ESP_QCLOUD_LOG_MALLOC malloc
 #define ESP_QCLOUD_LOG_FREE   free
 
