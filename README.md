@@ -15,10 +15,10 @@
     - [x] softap
     - [x] airkiss
     - [x] esp-touch v1
+    - [x] ble
     - [x] provisioning softap
     - [ ] esp-touch v2
-    - [ ] provisioning ble
-
+    
 - **认证方式**
 
     - [x] 密钥认证
@@ -313,3 +313,4 @@
 
     - [乐鑫物联网学院](https://space.bilibili.com/538078399)
     - [腾讯云大学](https://cloud.tencent.com/edu/learning)
+    - [开发参考视频](https://www.bilibili.com/video/BV1Hi4y157mG?from=search&seid=16774267987685056247)

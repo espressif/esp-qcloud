@@ -32,6 +32,7 @@
 #include "esp_qcloud_utils.h"
 #include "esp_qcloud_log.h"
 #include "esp_qcloud_storage.h"
+#include "esp_qcloud_prov.h"
 
 #define QCLOUD_IOTHUB_DEVICE_SDK_APPID             "21010406"
 #define QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN           "iotcloud.tencentdevices.com"
@@ -400,6 +401,15 @@ static void esp_qcloud_iothub_bond_callback(const char *topic, void *payload, si
         esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE, NULL, 0, portMAX_DELAY);
     } else if (!strcmp(method, "app_bind_token_reply")) {
         const int result_code = cJSON_GetObjectItem(root_json, "code")->valueint;
+        esp_qcloud_storage_erase("token");
+
+#ifdef CONFIG_LIGHT_PROVISIONING_BLECONFIG
+           /* This is an asynchronous operation, need to wait for the data to be sent */          
+            esp_qcloud_prov_ble_report_bind_status(result_code);
+            vTaskDelay(10);
+            esp_qcloud_prov_ble_stop();
+#endif
+
         if(0 == result_code){
             xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS);
             esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOND_DEVICE, NULL, 0, portMAX_DELAY);

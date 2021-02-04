@@ -42,6 +42,12 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         /* Signal main application to continue execution */
         xEventGroupSetBits(s_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t*) event_data;
+        ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
+        if(disconnected->reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT){
+            ESP_LOGE(TAG, "wrong password");
+            return;
+        }
         ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {

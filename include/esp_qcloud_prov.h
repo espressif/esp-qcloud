@@ -40,6 +40,12 @@ typedef enum {
     SOFTAPCONFIG_TYPE_ESPRESSIF_TENCENT,   /**< protocol: Espressif and Tencent */
 } softapconfig_type_t;
 
+typedef enum {
+    BLECONFIG_TYPE_ESPRESSIF = 1,       /**< protocol: Espressif */
+    BLECONFIG_TYPE_TENCENT,             /**< protocol: Tencent */
+    BLECONFIG_TYPE_ESPRESSIF_TENCENT,   /**< protocol: Espressif and Tencent */
+} bleconfig_type_t;
+
 /**
  * @brief Initialize wifi and register events.
  * 
@@ -100,6 +106,20 @@ esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type, const cha
 esp_err_t esp_qcloud_prov_softapconfig_stop(void);
 
 /**
+ * @brief 
+ * 
+ * @return esp_err_t 
+ */
+esp_err_t esp_qcloud_prov_bleconfig_start(bleconfig_type_t type, const char *local_name);
+
+/**
+ * @brief 
+ * 
+ * @return esp_err_t 
+ */
+esp_err_t esp_qcloud_prov_ble_stop(void);
+
+/**
  * @brief Wait for the provisioning result.
  * 
  * @param[in/out] sta_cfg Save SSID and password.
@@ -117,6 +137,14 @@ esp_err_t esp_qcloud_prov_wait(wifi_config_t *sta_cfg, uint32_t wait_ms);
  * @param[in] transport 
  */
 void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport);
+
+/**
+ * @brief Report binding status
+ * 
+ * @param token_status 
+ * @return esp_err_t 
+ */
+esp_err_t esp_qcloud_prov_ble_report_bind_status(bool token_status);
 
 #ifdef __cplusplus
 }
