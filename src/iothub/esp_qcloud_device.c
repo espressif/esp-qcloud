@@ -38,15 +38,10 @@ static esp_qcloud_profile_t *g_device_profile = NULL;
 static esp_qcloud_set_param_t g_esp_qcloud_set_param = NULL;
 static esp_qcloud_get_param_t g_esp_qcloud_get_param = NULL;
 
-static SLIST_HEAD(param_list_, esp_qcloud_param) g_param_list;
+static SLIST_HEAD(param_list_, esp_qcloud_param) g_property_list;
+static SLIST_HEAD(action_list_, esp_qcloud_action) g_action_list;
 
 static const char *TAG = "esp_qcloud_device";
-
-typedef struct esp_qcloud_param {
-    const char *id;
-    esp_qcloud_param_val_t value;
-    SLIST_ENTRY(esp_qcloud_param) next;    //!< next command in the list
-} esp_qcloud_param_t;
 
 esp_err_t esp_qcloud_device_add_fw_version(const char *version)
 {
@@ -173,17 +168,17 @@ const char *esp_qcloud_get_private_key()
     return g_device_profile->private_key;
 }
 
-esp_err_t esp_qcloud_device_add_param(const char *id, esp_qcloud_param_val_type_t type)
+esp_err_t esp_qcloud_device_add_property(const char *id, esp_qcloud_param_val_type_t type)
 {
     esp_qcloud_param_t *item = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_param_t));
 
     item->id = strdup(id);
     item->value.type = type;
 
-    esp_qcloud_param_t *last = SLIST_FIRST(&g_param_list);
+    esp_qcloud_param_t *last = SLIST_FIRST(&g_property_list);
 
     if (last == NULL) {
-        SLIST_INSERT_HEAD(&g_param_list, item, next);
+        SLIST_INSERT_HEAD(&g_property_list, item, next);
     } else {
         SLIST_INSERT_AFTER(last, item, next);
     }
@@ -191,7 +186,25 @@ esp_err_t esp_qcloud_device_add_param(const char *id, esp_qcloud_param_val_type_
     return ESP_OK;
 }
 
-esp_err_t esp_qcloud_device_add_cb(const esp_qcloud_get_param_t get_param_cb,
+esp_err_t esp_qcloud_device_add_action_cb(const char *action_id, const esp_qcloud_action_cb_t action_cb)
+{
+    esp_qcloud_action_t *item = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_action_t));
+
+    item->id = strdup(action_id);
+    item->action_cb = action_cb;
+
+    esp_qcloud_action_t *last = SLIST_FIRST(&g_action_list);
+
+    if (last == NULL) {
+        SLIST_INSERT_HEAD(&g_action_list, item, next);
+    } else {
+        SLIST_INSERT_AFTER(last, item, next);
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_qcloud_device_add_property_cb(const esp_qcloud_get_param_t get_param_cb,
                                    const esp_qcloud_set_param_t set_param_cb)
 {
     g_esp_qcloud_get_param = get_param_cb;
@@ -242,7 +255,7 @@ esp_err_t esp_qcloud_handle_get_param(const cJSON *request_data, cJSON *reply_da
     esp_err_t err = ESP_FAIL;
 
     esp_qcloud_param_t *param;
-    SLIST_FOREACH(param, &g_param_list, next) {
+    SLIST_FOREACH(param, &g_property_list, next) {
         /* Check if command starts with buf */
         err = g_esp_qcloud_get_param(param->id, &param->value);
         ESP_QCLOUD_ERROR_BREAK(err != ESP_OK, "esp_qcloud_get_param, id: %s", param->id);
@@ -258,5 +271,19 @@ esp_err_t esp_qcloud_handle_get_param(const cJSON *request_data, cJSON *reply_da
         }
     }
 
+    return err;
+}
+
+esp_err_t esp_qcloud_operate_action(esp_qcloud_method_t *action_handle, const char *action_id, char *params)
+{
+    esp_err_t err = ESP_ERR_NOT_FOUND;
+
+    esp_qcloud_action_t *action;
+    SLIST_FOREACH(action, &g_action_list, next) {
+        if(!strcmp(action->id, action_id)){
+            return action->action_cb(action_handle, params);
+        }
+    }
+    ESP_LOGE(TAG, "The callback function of <%s> was not found, Please check <esp_qcloud_device_add_action_cb>", action_id);
     return err;
 }

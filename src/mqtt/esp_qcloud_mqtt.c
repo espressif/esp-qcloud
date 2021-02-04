@@ -26,7 +26,7 @@
 
 static const char *TAG = "esp_qcloud_mqtt";
 
-#define MAX_MQTT_SUBSCRIPTIONS      5
+#define MAX_MQTT_SUBSCRIPTIONS      6
 
 typedef struct {
     char *topic;
