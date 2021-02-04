@@ -65,6 +65,8 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 {
     switch (event_id) {
         case QCLOUD_EVENT_IOTHUB_INIT_DONE:
+            esp_qcloud_iothub_report_device_info();
+            esp_qcloud_iothub_get_status(QCLOUD_METHOD_TYPE_REPORT, true);
             ESP_LOGI(TAG, "QCloud Initialised");
             break;
 
@@ -82,6 +84,10 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             ESP_LOGW(TAG, "Device bind fail");
             esp_qcloud_storage_erase(CONFIG_QCLOUD_NVS_NAMESPACE);
             esp_restart();
+            break;
+            
+        case QCLOUD_EVENT_IOTHUB_RECEIVE_STATUS:
+            ESP_LOGI(TAG, "receive status message: %s",(char*)event_data);
             break;
 
         default:
@@ -194,13 +200,13 @@ void app_main()
     /**< Configure the version of the device, and use this information to determine whether to OTA */
     ESP_ERROR_CHECK(esp_qcloud_device_add_fw_version("0.0.1"));
     /**< Register the properties of the device */
-    ESP_ERROR_CHECK(esp_qcloud_device_add_param("power_switch", QCLOUD_VAL_TYPE_BOOLEAN));
-    ESP_ERROR_CHECK(esp_qcloud_device_add_param("hue", QCLOUD_VAL_TYPE_INTEGER));
-    ESP_ERROR_CHECK(esp_qcloud_device_add_param("saturation", QCLOUD_VAL_TYPE_INTEGER));
-    ESP_ERROR_CHECK(esp_qcloud_device_add_param("value", QCLOUD_VAL_TYPE_INTEGER));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_property("power_switch", QCLOUD_VAL_TYPE_BOOLEAN));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_property("hue", QCLOUD_VAL_TYPE_INTEGER));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_property("saturation", QCLOUD_VAL_TYPE_INTEGER));
+    ESP_ERROR_CHECK(esp_qcloud_device_add_property("value", QCLOUD_VAL_TYPE_INTEGER));
     /**< The processing function of the communication between the device and the server */
-    ESP_ERROR_CHECK(esp_qcloud_device_add_cb(light_get_param, light_set_param));
-
+    ESP_ERROR_CHECK(esp_qcloud_device_add_property_cb(light_get_param, light_set_param));
+    
     /**
      * @brief Initialize Wi-Fi.
      */
