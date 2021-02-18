@@ -66,7 +66,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     switch (event_id) {
         case QCLOUD_EVENT_IOTHUB_INIT_DONE:
             esp_qcloud_iothub_report_device_info();
-            esp_qcloud_iothub_get_status(QCLOUD_METHOD_TYPE_REPORT, true);
             ESP_LOGI(TAG, "QCloud Initialised");
             break;
 

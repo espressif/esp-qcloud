@@ -463,7 +463,7 @@ esp_err_t esp_qcloud_iothub_bind(const char *token, bool block)
 
     if(true == block) {
         EventBits_t bits = xEventGroupWaitBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS | IOTHUB_EVENT_BIND_FAIL, 
-                                                                true, true, pdMS_TO_TICKS(QCLOUD_IOTHUB_BINDING_TIMEOUT));
+                                                                true, false, pdMS_TO_TICKS(QCLOUD_IOTHUB_BINDING_TIMEOUT));
         if (!(bits & IOTHUB_EVENT_BIND_FAIL)) {
             return ESP_FAIL;
         } else if(!(bits & IOTHUB_EVENT_BIND_SUCCESS)) {
