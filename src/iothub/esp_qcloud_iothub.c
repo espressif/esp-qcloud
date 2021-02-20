@@ -408,12 +408,16 @@ static void esp_qcloud_iothub_bond_callback(const char *topic, void *payload, si
 #endif
 
         if(0 == result_code){
-            xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS);
-            esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOND_DEVICE, NULL, 0, portMAX_DELAY);
+            ESP_LOGI(TAG, "Successfully bind to the cloud");
+            ESP_LOGW(TAG, "Waiting to be bound to the family");
         } else {
             xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BIND_FAIL);
             esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION, NULL, 0, portMAX_DELAY);
         }
+    } else if (!strcmp(method, "bind_device")) {
+        ESP_LOGI(TAG, "Successfully bound to the family");
+        xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS);
+        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOND_DEVICE, NULL, 0, portMAX_DELAY);
     }
 
 EXIT:
@@ -457,12 +461,13 @@ esp_err_t esp_qcloud_iothub_bind(const char *token, bool block)
 
     if(true == block) {
         EventBits_t bits = xEventGroupWaitBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS | IOTHUB_EVENT_BIND_FAIL, 
-                                                                true, true, pdMS_TO_TICKS(QCLOUD_IOTHUB_BINDING_TIMEOUT));
-        if (!(bits & IOTHUB_EVENT_BIND_FAIL)) {
+                                                                false, false, pdMS_TO_TICKS(QCLOUD_IOTHUB_BINDING_TIMEOUT));
+        if (bits & IOTHUB_EVENT_BIND_FAIL) {
             return ESP_FAIL;
-        } else if(!(bits & IOTHUB_EVENT_BIND_SUCCESS)) {
+        } else if(bits & IOTHUB_EVENT_BIND_SUCCESS) {
             return ESP_OK;
         } else {
+            esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION, NULL, 0, portMAX_DELAY);
             return ESP_ERR_TIMEOUT;
         }
     }
