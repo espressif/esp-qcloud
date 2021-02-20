@@ -178,14 +178,6 @@ static esp_err_t esp_qcloud_iothub_config(esp_qcloud_mqtt_config_t *mqtt_cfg)
 {
     esp_err_t err = ESP_FAIL;
 
-#ifdef QCLOUD_MQTT_TRANSPORT_OVER_NOSSL
-    asprintf(&mqtt_cfg->host, "mqtt://%s.%s:%d", esp_qcloud_get_product_id(),
-             QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS);
-#else
-    asprintf(&mqtt_cfg->host, "mqtts://%s.%s:%d", esp_qcloud_get_product_id(),
-             QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS);
-#endif
-
     asprintf(&mqtt_cfg->client_id, "%s%s", esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
     asprintf(&mqtt_cfg->username, "%s;%s;%05u;%ld", mqtt_cfg->client_id,
              QCLOUD_IOTHUB_DEVICE_SDK_APPID, esp_random() % 100000, LONG_MAX);
@@ -219,6 +211,9 @@ static esp_err_t esp_qcloud_iothub_config(esp_qcloud_mqtt_config_t *mqtt_cfg)
 
             strcat(mqtt_cfg->password, ";hmacsha256");
 
+            asprintf(&mqtt_cfg->host, "mqtt://%s.%s:%d", esp_qcloud_get_product_id(),
+             QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS);
+
 EXIT:
 
             if (err != 0) {
@@ -234,6 +229,9 @@ EXIT:
         case QCLOUD_AUTH_MODE_CERT:
             mqtt_cfg->client_cert = (char *)esp_qcloud_get_cert_crt();
             mqtt_cfg->client_key  = (char *)esp_qcloud_get_private_key();
+
+            asprintf(&mqtt_cfg->host, "mqtts://%s.%s:%d", esp_qcloud_get_product_id(),
+             QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS);
             break;
 
         default:
