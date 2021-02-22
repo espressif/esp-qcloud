@@ -108,11 +108,10 @@ esp_err_t esp_qcloud_create_device()
     /**
      * @brief Read device configuration information through sdkconfig.h
      *        1. Configure device information via `idf.py menuconfig`, Menu path: (Top) -> Example Configuration
+     *        2. Select key authentication
+     *        3. Enter device secret key
      */
-    g_device_profile->product_id    = CONFIG_QCLOUD_PRODUCT_ID;
-    g_device_profile->device_name   = CONFIG_QCLOUD_DEVICE_NAME;
     g_device_profile->device_secret = CONFIG_QCLOUD_DEVICE_SECRET;
-#endif
 
     if (strlen(g_device_profile->device_secret) != DEVICE_SECRET_SIZE
             || strlen(g_device_profile->product_id) != PRODUCT_ID_SIZE) {
@@ -124,6 +123,34 @@ esp_err_t esp_qcloud_create_device()
         ESP_LOGE(TAG, "device_secret: %s", g_device_profile->device_secret);
         goto ERR_EXIT;
     }
+#endif
+
+#ifdef CONFIG_AUTH_MODE_CERT
+    g_device_profile->auth_mode = QCLOUD_AUTH_MODE_CERT;
+    /**
+     * @brief Read device configuration information through sdkconfig.h
+     *        1. Configure device information via `idf.py menuconfig`, Menu path: (Top) -> Example Configuration
+     *        2. Choose certificate authentication
+     *        3. Replace the certificate file in the config directory
+     */
+
+    g_device_profile->cert_crt = (char*)dev_cert_crt_start;
+    g_device_profile->private_key = (char*)dev_private_key_start;
+
+    if (strlen(g_device_profile->product_id) != PRODUCT_ID_SIZE
+        || strlen(g_device_profile->cert_crt) != DEVICE_CERT_FILE_DEFAULT_SIZE) {
+        ESP_LOGE(TAG, "Please check if the authentication information of the device is configured");
+        ESP_LOGE(TAG, "Obtain authentication configuration information from login qcloud iothut: ");
+        ESP_LOGE(TAG, "https://console.cloud.tencent.com/iotexplorer");
+        ESP_LOGE(TAG, "product_id: %s", g_device_profile->product_id);
+        ESP_LOGE(TAG, "device_name: %s", g_device_profile->device_name);
+        ESP_LOGE(TAG, "cert_crt: \r\n%s", g_device_profile->cert_crt);
+        ESP_LOGE(TAG, "private_key: \r\n%s", g_device_profile->private_key);
+        goto ERR_EXIT;
+    }
+#endif
+
+#endif
 
     return ESP_OK;
 

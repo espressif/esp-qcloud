@@ -38,7 +38,7 @@ extern "C"
 #define PRODUCT_SECRET_MAX_SIZE          (32)  /**< MAX size of product secret */
 #define DEVICE_NAME_MAX_SIZE             (48)  /**< MAX size of device name */
 #define DEVICE_SECRET_SIZE               (24)  /**< MAX size of device secret */
-#define DEVICE_CERT_FILE_NAME_MAX_SIZE   (128) /**< MAX size of device cert file name */
+#define DEVICE_CERT_FILE_DEFAULT_SIZE    (92) /**< MAX size of device cert file name */
 
 #define AUTH_TOKEN_MAX_SIZE              (32)  /**< MAX size of auth token */
 
