@@ -96,7 +96,7 @@ menu "Light provisioning network selection"
                 "Enable SoftAP's network configuration method"
 
         config LIGHT_PROVISIONING_BLECONFIG
-            depends on IDF_TARGET_ESP32
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3
             bool "Enable BLE's network configuration method"
             default y
             help

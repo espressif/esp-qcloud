@@ -35,7 +35,7 @@ static bool g_prov_smartconfig_start = true;
 
 /* Event handler for catching system events */
 static void smartconfig_event_handler(void *arg, esp_event_base_t event_base,
-                                      int event_id, void *event_data)
+                                      int32_t  event_id, void *event_data)
 {
     switch (event_id) {
         case SC_EVENT_SCAN_DONE:
