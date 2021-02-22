@@ -41,6 +41,13 @@ static esp_qcloud_get_param_t g_esp_qcloud_get_param = NULL;
 static SLIST_HEAD(param_list_, esp_qcloud_param) g_property_list;
 static SLIST_HEAD(action_list_, esp_qcloud_action) g_action_list;
 
+#ifdef CONFIG_AUTH_MODE_CERT
+extern const uint8_t dev_cert_crt_start[] asm("_binary_dev_cert_crt_start");
+extern const uint8_t dev_cert_crt_end[] asm("_binary_dev_cert_crt_end");
+extern const uint8_t dev_private_key_start[] asm("_binary_dev_private_key_start");
+extern const uint8_t dev_private_key_end[] asm("_binary_dev_private_key_end");
+#endif
+
 static const char *TAG = "esp_qcloud_device";
 
 esp_err_t esp_qcloud_device_add_fw_version(const char *version)
@@ -74,7 +81,6 @@ esp_err_t esp_qcloud_device_cert(const char *cert_crt, const char *private_key)
 esp_err_t esp_qcloud_create_device()
 {
     g_device_profile = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_param_t));
-    g_device_profile->auth_mode = QCLOUD_AUTH_MODE_KEY;
 
 #ifdef CONFIG_QCLOUD_MASS_MANUFACTURE
     /**
@@ -105,6 +111,12 @@ esp_err_t esp_qcloud_create_device()
     g_device_profile->device_secret = ESP_QCLOUD_CALLOC(1, DEVICE_SECRET_SIZE + 1);
     ESP_ERROR_CHECK(nvs_get_str(handle, "device_secret", g_device_profile->device_secret, &required_size));
 #else
+
+    g_device_profile->product_id    = CONFIG_QCLOUD_PRODUCT_ID;
+    g_device_profile->device_name   = CONFIG_QCLOUD_DEVICE_NAME;
+
+#ifdef CONFIG_AUTH_MODE_KEY
+    g_device_profile->auth_mode = QCLOUD_AUTH_MODE_KEY;
     /**
      * @brief Read device configuration information through sdkconfig.h
      *        1. Configure device information via `idf.py menuconfig`, Menu path: (Top) -> Example Configuration
@@ -138,7 +150,7 @@ esp_err_t esp_qcloud_create_device()
     g_device_profile->private_key = (char*)dev_private_key_start;
 
     if (strlen(g_device_profile->product_id) != PRODUCT_ID_SIZE
-        || strlen(g_device_profile->cert_crt) != DEVICE_CERT_FILE_DEFAULT_SIZE) {
+        || strlen(g_device_profile->cert_crt) == DEVICE_CERT_FILE_DEFAULT_SIZE) {
         ESP_LOGE(TAG, "Please check if the authentication information of the device is configured");
         ESP_LOGE(TAG, "Obtain authentication configuration information from login qcloud iothut: ");
         ESP_LOGE(TAG, "https://console.cloud.tencent.com/iotexplorer");

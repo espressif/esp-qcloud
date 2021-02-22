@@ -19,6 +19,19 @@ menu "ESP QCloud Configuration"
             help
                 Factory NVS Partition name which will have the QCloud IOTHUB connectivity credentials.
 
+        choice QCLOUD_DEVICE_AUTH_MODE
+            depends on !QCLOUD_MASS_MANUFACTURE
+            prompt "QCloud Authentication mode"
+            default AUTH_MODE_KEY
+            help
+                QCloud Authentication mode.
+
+            config AUTH_MODE_KEY
+                bool "KEY"
+            config AUTH_MODE_CERT
+                bool "CERT"
+        endchoice
+
         config QCLOUD_PRODUCT_ID
             depends on !QCLOUD_MASS_MANUFACTURE
             string "Product ID"
@@ -34,7 +47,7 @@ menu "ESP QCloud Configuration"
                 Set the Device Name.
             
         config QCLOUD_DEVICE_SECRET
-            depends on !QCLOUD_MASS_MANUFACTURE
+            depends on AUTH_MODE_KEY
             string "Device Secret"
             default "DEVICE_SECRET"
             help
