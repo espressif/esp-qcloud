@@ -29,7 +29,7 @@
 
     - [x] 状态上报与下发
     - [x] OTA升级
-    - [ ] 事件上报
+    - [x] 事件上报
     - [ ] 网关
 
 - **调试功能**
@@ -48,21 +48,23 @@
 
     - ESP32
     - ESP32-S2
-
-- **开发板** 
-    
-    - [ESP32-DevKitC](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/hw-reference/esp32/get-started-devkitc.html)
-    - [ESP32-S2-Saola-1开发板](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)
-
+    - ESP32-C3
 
 # <span id = "compileprepare">2. IDF 环境搭建</span>
 
 - 可以参考 [ESP-IDF编程指南-快速入门](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/index.html#get-started-setup-toolchain) 快速完成工具链与环境的搭建
-- 在构建工程之前需将 `ESP-IDF` 切换到 `release/v4.2 分支` 
+- 使用 `ESP32`、`ESP32-S2` 构建工程之前需将 `ESP-IDF` 切换到 `release/v4.2 分支`，使用 `ESP32-C3` 则需要切换到 `master`。
+
+    > `ESP32-C3` 暂无 `release` 分支
 
     ```shell
     cd  $IDF_PATH 
+
+    # esp32esp32s2
     git checkout release/v4.2 
+    # esp32c3
+    git checkout master 
+
     git submodule update --init --recursive
     ```
 
@@ -124,6 +126,9 @@
 
         #choose esp32s2
         idf.py set-target esp32s2
+
+        #choose esp32c3
+        idf.py set-target esp32c3
         ```
 
     - **更改 `Partition`**
@@ -166,7 +171,7 @@
             (DEVICE_NAME) Device Name
             (DEVICE_SECRET) Device Secret
             ESP QCloud OTA Config  --->
-            QCloud utils  --->
+            ESP QCloud utils  --->
             ESP QCloud Log Config  --->
             UART for console input (UART0)  --->
             ```
