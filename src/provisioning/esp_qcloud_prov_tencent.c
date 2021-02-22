@@ -69,7 +69,7 @@ static bool g_prov_server_start_flag = false;
 
 /* Event handler for catching system events */
 static void event_handler(void *arg, esp_event_base_t event_base,
-                          int event_id, void *event_data)
+                          int32_t event_id, void *event_data)
 {
     if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;

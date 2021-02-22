@@ -61,7 +61,7 @@ static esp_err_t light_set_param(const char *id, const esp_qcloud_param_val_t *v
 
 /* Event handler for catching QCloud events */
 static void event_handler(void *arg, esp_event_base_t event_base,
-                          int event_id, void *event_data)
+                          int32_t event_id, void *event_data)
 {
     switch (event_id) {
         case QCLOUD_EVENT_IOTHUB_INIT_DONE:
