@@ -303,6 +303,8 @@ esp_err_t esp_qcloud_prov_ble_stop(void)
     ret = esp_bt_controller_deinit();
     ESP_QCLOUD_ERROR_CHECK(ret != ESP_OK, ret, "controller deinit failed, error code = %x", ret);
 
+    esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
+
     ESP_LOGI(TAG, "esp_qcloud_prov_ble_stop called successfully");
 
     return ret;

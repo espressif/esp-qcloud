@@ -18,6 +18,10 @@
 
 #include "light_driver.h"
 
+#ifdef CONFIG_BT_ENABLE
+#include "esp_bt.h"
+#endif
+
 static const char *TAG = "app_main";
 
 /* Callback to handle commands received from the QCloud cloud */
@@ -99,6 +103,11 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
     ESP_QCLOUD_PARAM_CHECK(wifi_cfg);
 
     if (esp_qcloud_storage_get("wifi_config", wifi_cfg, sizeof(wifi_config_t)) == ESP_OK) {
+
+#ifdef CONFIG_BT_ENABLE
+    esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
+#endif
+
         return ESP_OK;
     }
     ESP_ERROR_CHECK(esp_wifi_start());
