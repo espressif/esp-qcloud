@@ -40,8 +40,13 @@
 #define QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS       1883
 
 #define QCLOUD_IOTHUB_BINDING_TIMEOUT              40000  
-#define EVENT_VERSION                              "1.O"
+#define EVENT_VERSION                              "1.0"
 #define TOPIC_METHOD_NAME_MAX_SIZE                 16
+
+#ifdef CONFIG_AUTH_MODE_CERT
+extern const uint8_t qcloud_root_cert_crt_start[] asm("_binary_qcloud_root_cert_crt_start");
+extern const uint8_t qcloud_root_cert_crt_end[] asm("_binary_qcloud_root_cert_crt_end");
+#endif
 
 ESP_EVENT_DEFINE_BASE(QCLOUD_EVENT);
 
@@ -176,7 +181,7 @@ EXIT:
 
 static esp_err_t esp_qcloud_iothub_config(esp_qcloud_mqtt_config_t *mqtt_cfg)
 {
-    esp_err_t err = ESP_FAIL;
+    esp_err_t err = ESP_OK;
 
     asprintf(&mqtt_cfg->client_id, "%s%s", esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
     asprintf(&mqtt_cfg->username, "%s;%s;%05u;%ld", mqtt_cfg->client_id,
@@ -229,6 +234,12 @@ EXIT:
         case QCLOUD_AUTH_MODE_CERT:
             mqtt_cfg->client_cert = (char *)esp_qcloud_get_cert_crt();
             mqtt_cfg->client_key  = (char *)esp_qcloud_get_private_key();
+
+#ifdef CONFIG_AUTH_MODE_CERT
+            mqtt_cfg->server_cert = (char *)qcloud_root_cert_crt_start;
+#endif
+            /* When using certificate authentication, Qcloud does not verify the password */
+            mqtt_cfg->password = QCLOUD_IOTHUB_DEVICE_SDK_APPID;
 
             asprintf(&mqtt_cfg->host, "mqtts://%s.%s:%d", esp_qcloud_get_product_id(),
              QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS);
