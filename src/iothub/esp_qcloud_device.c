@@ -88,6 +88,7 @@ esp_err_t esp_qcloud_create_device()
     g_device_profile = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_param_t));
 
 #ifdef CONFIG_QCLOUD_MASS_MANUFACTURE
+    g_device_profile->auth_mode = QCLOUD_AUTH_MODE_KEY;
     /**
      * @brief Read device configuration information through flash
      *        1. Configure device information via single_mfg_config.csv
@@ -95,6 +96,7 @@ esp_err_t esp_qcloud_create_device()
      *          python $IDF_PATH/components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py generate single_mfg_config.csv single_mfg_config.bin 0x4000
      *        3. Burn single_mfg_config.bin to flash
      *          python $IDF_PATH/components/esptool_py/esptool/esptool.py write_flash 0x15000 single_mfg_config.bin
+     * @note Currently does not support the use of certificates for mass manufacture
      */
     esp_err_t err = ESP_FAIL;
     nvs_handle handle = 0;
