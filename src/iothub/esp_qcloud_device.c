@@ -19,6 +19,11 @@
 #include "esp_qcloud_iothub.h"
 #include "esp_qcloud_utils.h"
 
+#ifdef CONFIG_QCLOUD_MASS_MANUFACTURE
+#include "nvs.h"
+#include "nvs_flash.h"
+#endif
+
 /* Handle to maintain internal information (will move to an internal file) */
 typedef struct {
     char *product_id;
