@@ -121,7 +121,7 @@ esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type,
         wifi_prov_mgr_endpoint_create("custom-data");
 
         /* Start provisioning service */
-        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, pop, ssid, password));
+        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_0, pop, ssid, password));
 
         /* The handler for the optional endpoint created above.
          * This call must be made after starting the provisioning, and only if the endpoint
