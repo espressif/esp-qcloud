@@ -119,7 +119,7 @@ void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport)
         return;
     }
 
-    char *rainmaker_payload = NULL;
+    char *qcloud_payload = NULL;
     char *terminal_payload = NULL;
 
     asprintf(&terminal_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s&productId=%s&ver=%s&name=%s",
@@ -127,15 +127,14 @@ void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport)
     ESP_LOGI(TAG, "Scan this QR code from the Wechat for Provisioning.");
     qrcode_display(terminal_payload);
     
-    asprintf(&rainmaker_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s%%26productId=%s%%26ver=%s%%26name=%s",
+    asprintf(&qcloud_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s%%26productId=%s%%26ver=%s%%26name=%s",
              transport, esp_qcloud_get_product_id(), PROV_QR_VERSION, name);
     ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s",
-             "https://rainmaker.espressif.com/qrcode.html", rainmaker_payload);
+             "https://rainmaker.espressif.com/qrcode.html", qcloud_payload);
 
-    ESP_QCLOUD_FREE(rainmaker_payload);
+    ESP_QCLOUD_FREE(qcloud_payload);
     ESP_QCLOUD_FREE(terminal_payload);
 }
-
 
 esp_err_t esp_qcloud_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ssize_t inlen,
                                        uint8_t **outbuf, ssize_t *outlen, void *priv_data)
@@ -145,17 +144,21 @@ esp_err_t esp_qcloud_prov_data_handler(uint32_t session_id, const uint8_t *inbuf
     }
 
     cJSON *root = cJSON_Parse((char *)inbuf);
+    ESP_QCLOUD_ERROR_GOTO(!root, EXIT, "The data format is wrong");
+
     cJSON *token_json = cJSON_GetObjectItem(root, "token");
+    ESP_QCLOUD_ERROR_GOTO(!token_json, EXIT, "The data format is wrong, the 'token' field is not included");
+
     g_token = strdup(token_json->valuestring);
 
     *outlen = asprintf((char **)outbuf,
                        "{\"cmdType\":2,\"productId\":\"%s\",\"deviceName\":\"%s\",\"protoVersion\":\"2.0\"}",
                        esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
 
-    cJSON_Delete(root);
-
     xEventGroupSetBits(g_wifi_event_group, QCLOUD_PROV_EVENT_GET_TOKEN);
 
+EXIT:
+    cJSON_Delete(root);
     return ESP_OK;
 }
 
