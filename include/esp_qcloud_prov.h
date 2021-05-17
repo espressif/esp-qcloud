@@ -66,6 +66,13 @@ esp_err_t esp_qcloud_wifi_init(void);
 esp_err_t esp_qcloud_wifi_start(const wifi_config_t *sta_cfg);
 
 /**
+ * @brief Reset wifi
+ * 
+ * @return esp_err_t 
+ */
+esp_err_t esp_qcloud_wifi_reset(void);
+
+/**
  * @brief Start SmartConfig.
  * 
  * @param[in] type Choose from the smartconfig_type_t.

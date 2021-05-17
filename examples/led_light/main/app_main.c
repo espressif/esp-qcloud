@@ -79,13 +79,13 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
         case QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE:
             ESP_LOGW(TAG, "Device unbound with iothub");
-            esp_qcloud_storage_erase(CONFIG_QCLOUD_NVS_NAMESPACE);
+            esp_qcloud_wifi_reset();
             esp_restart();
             break;
 
         case QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION:
             ESP_LOGW(TAG, "Device bind fail");
-            esp_qcloud_storage_erase(CONFIG_QCLOUD_NVS_NAMESPACE);
+            esp_qcloud_wifi_reset();
             esp_restart();
             break;
             
@@ -110,7 +110,10 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
 
         return ESP_OK;
     }
-    ESP_ERROR_CHECK(esp_wifi_start());
+
+    /**< Reset wifi and restart wifi */
+    esp_wifi_restore();
+    esp_wifi_start();
 
     /**< The yellow light flashes to indicate that the device enters the state of configuring the network */
     light_driver_breath_start(128, 128, 0); /**< yellow blink */
