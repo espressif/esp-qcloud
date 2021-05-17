@@ -25,6 +25,9 @@
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 
+#include "esp_qcloud_storage.h"
+#include "esp_qcloud_utils.h"
+
 #define QCLOUD_PROV_EVENT_STA_CONNECTED  BIT0
 
 static const char *TAG  = "esp_qcloud_wifi";
@@ -90,4 +93,16 @@ esp_err_t esp_qcloud_wifi_start(const wifi_config_t *conf)
     xEventGroupWaitBits(s_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED, true, true, portMAX_DELAY);
 
     return ESP_OK;
+}
+
+esp_err_t esp_qcloud_wifi_reset(void)
+{
+    esp_err_t err = ESP_FAIL;
+    err = esp_wifi_restore();
+    ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_wifi_restore fail, reason: %s", esp_err_to_name(err));
+    
+    err = esp_qcloud_storage_erase("wifi_config");
+    ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_storage_erase fail, reason: %s", esp_err_to_name(err));
+
+    return err;
 }
