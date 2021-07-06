@@ -75,6 +75,7 @@ esp_err_t esp_qcloud_prov_smartconfig_start(smartconfig_type_t type)
     esp_err_t err = ESP_OK;
     g_prov_smartconfig_start = true;
 
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_smartconfig_set_type(type));
     smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_smartconfig_start(&cfg));
