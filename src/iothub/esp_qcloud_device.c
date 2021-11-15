@@ -85,7 +85,7 @@ esp_err_t esp_qcloud_device_cert(const char *cert_crt, const char *private_key)
 
 esp_err_t esp_qcloud_create_device()
 {
-    g_device_profile = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_param_t));
+    g_device_profile = ESP_QCLOUD_CALLOC(1, sizeof(esp_qcloud_profile_t));
 
 #ifdef CONFIG_QCLOUD_MASS_MANUFACTURE
     g_device_profile->auth_mode = QCLOUD_AUTH_MODE_KEY;
