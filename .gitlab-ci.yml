@@ -9,9 +9,7 @@ variables:
   IDF_CI_BUILD: "1"
 
 before_script:
-  - export IDF_PATH=~/.espressif/idf/esp-idf-v4.2
   - cd $IDF_PATH
-  - git pull
   - git submodule update --init --recursive
   - ./install.sh
   - . ./export.sh
@@ -19,7 +17,7 @@ before_script:
 
 .build_examples_template: &build_examples_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/ae-esp32-ci-env:latest-3cf42c4c
+  image: espressif/idf:release-v4.3
   tags:
     - build
   # Artifacts are not used temporarily
@@ -45,6 +43,8 @@ build_demo_cmake:
     - idf.py set-target esp32
     - idf.py build
     - idf.py set-target esp32s2
+    - idf.py build
+    - idf.py set-target esp32c3
     - idf.py build
     - cd ../../
 
