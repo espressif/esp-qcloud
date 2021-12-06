@@ -30,6 +30,7 @@
 #include "sys/param.h"
 
 #include "esp_blufi_api.h"
+#include "esp_blufi.h"
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 #include "esp_bt_main.h"

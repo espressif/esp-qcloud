@@ -22,7 +22,7 @@
 - **认证方式**
 
     - [x] 密钥认证
-    - [ ] 证书认证
+    - [x] 证书认证
     - [ ] 动态注册
 
 - **业务功能**
@@ -53,17 +53,12 @@
 # <span id = "compileprepare">2. IDF 环境搭建</span>
 
 - 可以参考 [ESP-IDF编程指南-快速入门](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/index.html#get-started-setup-toolchain) 快速完成工具链与环境的搭建
-- 使用 `ESP32`、`ESP32-S2` 构建工程之前需将 `ESP-IDF` 切换到 `release/v4.2 分支`，使用 `ESP32-C3` 则需要切换到 `master`。
-
-    > `ESP32-C3` 暂无 `release` 分支
+- 构建工程之前需将 `ESP-IDF` 切换到 `release/v4.3 分支`。
 
     ```shell
     cd  $IDF_PATH 
 
-    # esp32esp32s2
-    git checkout release/v4.2 
-    # esp32c3
-    git checkout master 
+    git checkout release/v4.3 
 
     git submodule update --init --recursive
     ```
