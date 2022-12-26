@@ -15,10 +15,16 @@
 #pragma once
 
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "freertos/FreeRTOS.h"
 
 #include <esp_err.h>
+
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0))
+#include <esp_random.h>
+#endif
+
 #include "esp_log.h"
 
 #ifdef __cplusplus
@@ -67,11 +73,11 @@ typedef struct esp_qcloud_time_config {
         } \
     } while(0)
 
-#define ESP_QCLOUD_ERROR_GOTO(con, lable, format, ...) do { \
+#define ESP_QCLOUD_ERROR_GOTO(con, label, format, ...) do { \
         if (con) { \
             if(*format != '\0') \
                 ESP_LOGW(TAG, format, ##__VA_ARGS__); \
-            goto lable; \
+            goto label; \
         } \
     } while(0)
 
@@ -167,9 +173,9 @@ bool esp_qcloud_timesync_check(void);
 esp_err_t esp_qcloud_timesync_wait(uint32_t wait_ms);
 
 /** Interval printing system information
- * 
+ *
  * @param[in] uint32_t Interval of printing system log information
- * 
+ *
  */
 void esp_qcloud_print_system_info(uint32_t interval_ms);
 

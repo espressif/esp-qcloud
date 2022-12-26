@@ -150,53 +150,61 @@ esp_err_t esp_qcloud_mqtt_publish(const char *topic, void *data, size_t data_len
 static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 {
     switch (event->event_id) {
-        case MQTT_EVENT_CONNECTED:
-            ESP_LOGI(TAG, "MQTT Connected");
+    case MQTT_EVENT_CONNECTED:
+        ESP_LOGI(TAG, "MQTT Connected");
 
-            /* Resubscribe to all topics after reconnection */
-            for (int i = 0; i < MAX_MQTT_SUBSCRIPTIONS; i++) {
-                if (mqtt_data->subscriptions[i]) {
-                    esp_mqtt_client_subscribe(event->client, mqtt_data->subscriptions[i]->topic, 1);
-                }
+        /* Resubscribe to all topics after reconnection */
+        for (int i = 0; i < MAX_MQTT_SUBSCRIPTIONS; i++) {
+            if (mqtt_data->subscriptions[i]) {
+                esp_mqtt_client_subscribe(event->client, mqtt_data->subscriptions[i]->topic, 1);
             }
+        }
 
-            xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_EVENT);
-            break;
+        xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_EVENT);
+        break;
 
-        case MQTT_EVENT_DISCONNECTED:
-            ESP_LOGW(TAG, "MQTT Disconnected. Will try reconnecting in a while...");
-            break;
+    case MQTT_EVENT_DISCONNECTED:
+        ESP_LOGW(TAG, "MQTT Disconnected. Will try reconnecting in a while...");
+        break;
 
-        case MQTT_EVENT_SUBSCRIBED:
-            ESP_LOGD(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-            break;
+    case MQTT_EVENT_SUBSCRIBED:
+        ESP_LOGD(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        break;
 
-        case MQTT_EVENT_UNSUBSCRIBED:
-            ESP_LOGD(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
-            break;
+    case MQTT_EVENT_UNSUBSCRIBED:
+        ESP_LOGD(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+        break;
 
-        case MQTT_EVENT_PUBLISHED:
-            ESP_LOGD(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-            break;
+    case MQTT_EVENT_PUBLISHED:
+        ESP_LOGD(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        break;
 
-        case MQTT_EVENT_DATA:
-            ESP_LOGD(TAG, "MQTT_EVENT_DATA");
-            ESP_LOGD(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
-            ESP_LOGD(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
-            esp_qcloud_mqtt_subscribe_callback(event->topic, event->topic_len, event->data, event->data_len);
-            break;
+    case MQTT_EVENT_DATA:
+        ESP_LOGD(TAG, "MQTT_EVENT_DATA");
+        ESP_LOGD(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        ESP_LOGD(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
+        esp_qcloud_mqtt_subscribe_callback(event->topic, event->topic_len, event->data, event->data_len);
+        break;
 
-        case MQTT_EVENT_ERROR:
-            ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
-            break;
+    case MQTT_EVENT_ERROR:
+        ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
+        break;
 
-        default:
-            ESP_LOGD(TAG, "Other event id:%d", event->event_id);
-            break;
+    default:
+        ESP_LOGD(TAG, "Other event id:%d", event->event_id);
+        break;
     }
 
     return ESP_OK;
 }
+
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+static void new_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
+{
+    mqtt_event_handler(event_data);
+}
+#endif
+
 esp_err_t esp_qcloud_mqtt_connect(void)
 {
     if (!mqtt_data) {
@@ -267,6 +275,17 @@ esp_err_t esp_qcloud_mqtt_init(esp_qcloud_mqtt_config_t *config)
     mqtt_data->config = malloc(sizeof(esp_qcloud_mqtt_config_t));
     *mqtt_data->config = *config;
     const esp_mqtt_client_config_t mqtt_client_cfg = {
+
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+        .credentials.username = config->username,
+        .credentials.authentication.password = config->password,
+        .credentials.client_id = config->client_id,
+        .broker.address.uri = config->host,
+        .broker.verification.certificate = config->server_cert,
+        .credentials.authentication.certificate = config->client_cert,
+        .credentials.authentication.key = config->client_key,
+        .session.keepalive = 15,
+#else
         .username  = config->username,
         .password  = config->password,
         .client_id = config->client_id,
@@ -276,7 +295,14 @@ esp_err_t esp_qcloud_mqtt_init(esp_qcloud_mqtt_config_t *config)
         .client_key_pem  = config->client_key,
         .keepalive       = 15,
         .event_handle    = mqtt_event_handler,
+#endif
+
     };
     mqtt_data->mqtt_client = esp_mqtt_client_init(&mqtt_client_cfg);
+
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+    esp_mqtt_client_register_event(mqtt_data->mqtt_client, ESP_EVENT_ANY_ID, new_event_handler, NULL);
+#endif
+
     return ESP_OK;
 }

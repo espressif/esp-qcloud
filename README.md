@@ -1,5 +1,7 @@
 # ESP32 设备对接腾讯云指南
-# 目录
+
+## 目录
+
 0. [介绍](#Introduction)
 1. [硬件准备](#hardwareprepare)  
 2. [IDF环境搭建](#compileprepare)  
@@ -7,53 +9,62 @@
 4. [调试工具](#debugtool)
 5. [相关资源](#faq)
 
-# <span id = "Introduction">0. 介绍</span>
+## <span id = "Introduction">0. 介绍</span>
+
 `esp-qcloud` 是由 [乐鑫官方](https://www.espressif.com) 推出接入 [腾讯物联网开发平台 (IoT Explorer)](https://console.cloud.tencent.com/iotexplorer) 的开发套件 。该套件依据 `IoT Explorer` 通信协议而设计，相对于 [腾讯云物联 IoT C-SDK](https://github.com/tencentyun/qcloud-iot-sdk-embedded-c)，该套件将云平台配置、配网操作封装成接口，简化了整体流程，只需完成简单的调用，即可完成配网、连云操作。同时，该套件提供了丰富的调试工具、示例代码、量产工具供你快速完成产品开发。
+
+当前 IDF 支持情况如下表：
+
+|                       | ESP-IDF <br> Release/v3.3 | ESP-IDF <br> Release/v4.0| ESP-IDF <br> Release/v4.1| ESP-IDF <br> Release/v4.2| ESP-IDF <br> Release/v4.3| ESP-IDF <br> Release/v4.4 | ESP-IDF <br> Master |
+|:----------- |:---------------------: | :---------------------:| :---------------------:|:---------------------: | :---------------------:| :---------------------:| :---------------------:|
+| esp-qcloud <br> Master  |  ❌ | ❌ |  ❌ | ✔ | ✔ | ✔ | ✔ |
 
 - **配网方式**
 
-    - [x] softap
-    - [x] airkiss
-    - [x] esp-touch v1
-    - [x] ble
-    - [x] provisioning softap
-    - [ ] esp-touch v2
-    
+  - [x] softap
+  - [x] airkiss
+  - [x] esp-touch v1
+  - [x] ble
+  - [x] provisioning softap
+  - [ ] esp-touch v2
+
 - **认证方式**
 
-    - [x] 密钥认证
-    - [x] 证书认证
-    - [ ] 动态注册
+  - [x] 密钥认证
+  - [x] 证书认证
+  - [ ] 动态注册
 
 - **业务功能**
 
-    - [x] 状态上报与下发
-    - [x] OTA升级
-    - [x] 事件上报
-    - [ ] 网关
+  - [x] 状态上报与下发
+  - [x] OTA升级
+  - [x] 事件上报
+  - [ ] 网关
 
 - **调试功能**
 
-    - [x] 日志上报云平台
-    - [x] 日志本地存储
-    - [x] 串口调试
+  - [x] 日志上报云平台
+  - [x] 日志本地存储
+  - [x] 串口调试
 
 - **生产工具**
 
-    - [x] 单一/批量 bin 生成
-    - [ ] 加密
+  - [x] 单一/批量 bin 生成
+  - [ ] 加密
 
-# <span id = "hardwareprepare">1.硬件准备</span>
+## <span id = "hardwareprepare">1.硬件准备</span>
+
 - **模组**  
 
-    - ESP32
-    - ESP32-S2
-    - ESP32-C3
+  - ESP32
+  - ESP32-S2
+  - ESP32-C3
+  - ESP32-S3
 
-# <span id = "compileprepare">2. IDF 环境搭建</span>
+## <span id = "compileprepare">2. IDF 环境搭建</span>
 
 - 可以参考 [ESP-IDF编程指南-快速入门](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/get-started/index.html#get-started-setup-toolchain) 快速完成工具链与环境的搭建
-- 构建工程之前需将 `ESP-IDF` 切换到 `release/v4.3 分支`。
+- 构建工程之前需将 `ESP-IDF` 切换到合适版本。当前支持的 IDF 版本请[查阅此处](#Introduction)。
 
     ```shell
     cd  $IDF_PATH 
@@ -63,7 +74,7 @@
     git submodule update --init --recursive
     ```
 
-# <span id = "makefile">3. 构建&烧录&运行工程</span> 
+## <span id = "makefile">3. 构建&烧录&运行工程</span>
 
 0. **提取项目文件**
 
@@ -101,7 +112,6 @@
         #Delete unnecessary files
         idf.py fullclean
         ```
-
 
 1. **配置芯片**
 
@@ -145,10 +155,9 @@
 
             - `Custom partition CSV file` 中即可编辑 `CSV` 文件。
 
-
 2. **烧录认证信息[可选]**
 
-   当使用云平台时，你需要在 [IoT Explorer](https://console.cloud.tencent.com/iotexplorer) 获取认证信息，认证信息通常为 `产品 ID (PRODUCT_ID)` 、 `设备名称 (DEVICE_NAME) `、 `设备密钥 (DEVICE_SECRET) `，可参考 [智能灯文档](./examples/led_light/README.md) 中 `烧录认证信息` 或 [IoT Explorer 官方文档](https://cloud.tencent.com/document/product/1081/34739) 进行平台参数设置、获取。获取到认证信息时，可以选择下述任意一种方式烧录。
+   当使用云平台时，你需要在 [IoT Explorer](https://console.cloud.tencent.com/iotexplorer) 获取认证信息，认证信息通常为 `产品 ID (PRODUCT_ID)` 、 `设备名称 (DEVICE_NAME)`、 `设备密钥 (DEVICE_SECRET)`，可参考 [智能灯文档](./examples/led_light/README.md) 中 `烧录认证信息` 或 [IoT Explorer 官方文档](https://cloud.tencent.com/document/product/1081/34739) 进行平台参数设置、获取。获取到认证信息时，可以选择下述任意一种方式烧录。
 
    - **通过 `menuconfig` 配置**
 
@@ -175,16 +184,14 @@
 
         3. **填入你的信息**
 
-            填写 `产品 ID (PRODUCT_ID) `、 `设备名称 (DEVICE_NAME) `、 `设备密钥 (DEVICE_SECRET) `。
-        
+            填写 `产品 ID (PRODUCT_ID)`、 `设备名称 (DEVICE_NAME)`、 `设备密钥 (DEVICE_SECRET)`。
 
     - **通过量产工具配置**
-    
+
         请参考量产工具目录下的 [文档](./config/mass_mfg/README.md) ，另外需要 <b>开启</b> `ESP QCloud Mass Manufacture` 选项。
 
-
 3. **构建项目**
-    
+
     当完成配置，下述命令将帮助快速构建。
 
     - **构建工程**
@@ -218,14 +225,14 @@
     ```shell
     idf.py flash monitor
     ```
-    
+
     - **擦除 Flash**
 
     ```shell
     idf.py erase_flash
     ```
 
-# <span id = "debugtool">4. 调试工具</span> 
+## <span id = "debugtool">4. 调试工具</span>
 
 - **串口调试**
 
@@ -244,7 +251,7 @@
         Light provisioning network selection  --->
         (5) More than this number of continuous uninterrupted restarts triggers a reset of the device
         [*] The device will be in debug mode
-        ``` 
+        ```
 
         - <b>开启</b> `The device will be in debug mode` 选项。
 
@@ -296,21 +303,21 @@
     };
     ```
 
-# <span id = "faq">5. 相关资源</span>
+## <span id = "faq">5. 相关资源</span>
 
 - 文档中心
 
-    - [ESP-IDF 编程指南（ESP32）](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/)
-    - [ESP-IDF 编程指南（ESP32S2）](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/index.html)
-    - [腾讯云物联网开发平台文档（IoT Explorer）](https://cloud.tencent.com/document/product/1081)
+  - [ESP-IDF 编程指南（ESP32）](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32/)
+  - [ESP-IDF 编程指南（ESP32S2）](https://docs.espressif.com/projects/esp-idf/zh_CN/latest/esp32s2/index.html)
+  - [腾讯云物联网开发平台文档（IoT Explorer）](https://cloud.tencent.com/document/product/1081)
 
 - 源码仓库
 
-    - [Espressif Systems - github](https://github.com/espressif)
-    - [Espressif Systems - gitee](https://gitee.com/EspressifSystems)
+  - [Espressif Systems - github](https://github.com/espressif)
+  - [Espressif Systems - gitee](https://gitee.com/EspressifSystems)
 
 - 相关视频
 
-    - [乐鑫物联网学院](https://space.bilibili.com/538078399)
-    - [腾讯云大学](https://cloud.tencent.com/edu/learning)
-    - [开发参考视频](https://www.bilibili.com/video/BV1Hi4y157mG?from=search&seid=16774267987685056247)
+  - [乐鑫物联网学院](https://space.bilibili.com/538078399)
+  - [腾讯云大学](https://cloud.tencent.com/edu/learning)
+  - [开发参考视频](https://www.bilibili.com/video/BV1Hi4y157mG?from=search&seid=16774267987685056247)

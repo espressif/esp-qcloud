@@ -48,7 +48,7 @@ typedef struct {
     char md5sum[33];
     char url[512];
     char version[32];
-    uint32_t start_timetemp;
+    uint32_t start_timestamp;
     size_t download_size;
     uint8_t download_percent;
 } esp_qcloud_ota_info_t;
@@ -66,28 +66,28 @@ static esp_err_t esp_qcloud_ota_report_status(esp_qcloud_ota_info_t *ota_info, e
     cJSON *report = cJSON_CreateObject();
 
     switch (type) {
-        case QCLOUD_OTA_REPORT_DOWNLOADING: {
-            char str_tmp[16] = {0};
-            cJSON_AddStringToObject(progress, "state", "downloading");
-            cJSON_AddStringToObject(progress, "percent", itoa(ota_info->download_percent, str_tmp, 10));
-            break;
-        }
+    case QCLOUD_OTA_REPORT_DOWNLOADING: {
+        char str_tmp[16] = {0};
+        cJSON_AddStringToObject(progress, "state", "downloading");
+        cJSON_AddStringToObject(progress, "percent", itoa(ota_info->download_percent, str_tmp, 10));
+        break;
+    }
 
-        case QCLOUD_OTA_REPORT_BURN_BEGIN:
-            cJSON_AddStringToObject(progress, "state", "burning");
-            break;
+    case QCLOUD_OTA_REPORT_BURN_BEGIN:
+        cJSON_AddStringToObject(progress, "state", "burning");
+        break;
 
-        case QCLOUD_OTA_REPORT_BURN_SUCCESS:
-            cJSON_AddStringToObject(progress, "state", "done");
-            break;
+    case QCLOUD_OTA_REPORT_BURN_SUCCESS:
+        cJSON_AddStringToObject(progress, "state", "done");
+        break;
 
-        case QCLOUD_OTA_REPORT_FAIL:
-            cJSON_AddStringToObject(progress, "state", "fail");
-            result_code = "-1";
-            break;
+    case QCLOUD_OTA_REPORT_FAIL:
+        cJSON_AddStringToObject(progress, "state", "fail");
+        result_code = "-1";
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     cJSON_AddStringToObject(progress, "result_code", result_code);
@@ -164,15 +164,15 @@ static char *ota_url_https_to_http(const char *url)
     char *p = (char *)url;
     char *result;
 
-    if(!strstr(p, "https") || strlen(p) <= 5){
+    if (!strstr(p, "https") || strlen(p) <= 5) {
         return NULL;
     }
-    asprintf(&result, "http%s", p+5);
+    asprintf(&result, "http%s", p + 5);
 
     return result;
 }
 
-static void esp_qcloud_iotbub_ota_task(void *arg)
+static void esp_qcloud_iothub_ota_task(void *arg)
 {
     esp_err_t ota_finish_err = 0;
     esp_qcloud_ota_info_t *ota_info = (esp_qcloud_ota_info_t *)arg;
@@ -204,7 +204,7 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
 
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_https_ota_read_img_desc failed");
-        esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_FAIL, "Failed to read image decription");
+        esp_qcloud_ota_report_status(ota_info, QCLOUD_OTA_REPORT_FAIL, "Failed to read image decryption");
         goto EXIT;
     }
 
@@ -233,7 +233,7 @@ static void esp_qcloud_iotbub_ota_task(void *arg)
     }
 
     if (esp_https_ota_is_complete_data_received(https_ota_handle) != true) {
-        // the OTA image was not completely received and user can customise the response to this situation.
+        // the OTA image was not completely received and user can customize the response to this situation.
         ESP_LOGE(TAG, "Complete data was not received.");
     }
 
@@ -275,8 +275,8 @@ static void esp_qcloud_iothub_ota_callback(const char *topic, void *payload, siz
         ota_info->file_size = cJSON_GetObjectItem(request_data, "file_size")->valueint;
         strcpy(ota_info->md5sum, cJSON_GetObjectItem(request_data, "md5sum")->valuestring);
 
-#ifdef CONFIG_QCLOUD_USE_HTTPS_UPDATA
-        strcpy(ota_info->url, cJSON_GetObjectItem(request_data, "url")->valuestring);     
+#ifdef CONFIG_QCLOUD_USE_HTTPS_UPDATE
+        strcpy(ota_info->url, cJSON_GetObjectItem(request_data, "url")->valuestring);
 #else
         char *http_url = ota_url_https_to_http(cJSON_GetObjectItem(request_data, "url")->valuestring);
         strcpy(ota_info->url, http_url);
@@ -285,7 +285,7 @@ static void esp_qcloud_iothub_ota_callback(const char *topic, void *payload, siz
 
         strcpy(ota_info->version, cJSON_GetObjectItem(request_data, "version")->valuestring);
 
-        xTaskCreatePinnedToCore(esp_qcloud_iotbub_ota_task, "iotbub_ota", 4 * 1024, ota_info, 1, NULL, 0);
+        xTaskCreatePinnedToCore(esp_qcloud_iothub_ota_task, "iothub_ota", 4 * 1024, ota_info, 1, NULL, 0);
     }
 
     ESP_LOGW(TAG, "esp_qcloud_iothub_ota_callback exit");
@@ -302,7 +302,7 @@ esp_err_t esp_qcloud_iothub_ota_enable()
     char *subscribe_topic = NULL;
 
     /**
-     * @brief ubscribed server firmware upgrade news
+     * @brief subscribed server firmware upgrade news
      */
     asprintf(&subscribe_topic, "$ota/update/%s/%s",
              esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
@@ -312,7 +312,7 @@ esp_err_t esp_qcloud_iothub_ota_enable()
     ESP_LOGI(TAG, "mqtt_subscribe, topic: %s", subscribe_topic);
 
     /**
-     * @breif The device reports the current version number
+     * @brief The device reports the current version number
      */
     asprintf(&publish_topic, "$ota/report/%s/%s",
              esp_qcloud_get_product_id(), esp_qcloud_get_device_name());

@@ -79,7 +79,7 @@ esp_err_t esp_qcloud_timesync_wait(TickType_t ticks_to_wait)
 
     /* Check if ticks_to_wait expired and time is not synchronized yet. */
     if (esp_qcloud_timesync_check() == false) {
-        ESP_LOGE(TAG, "Time not synchronized within the provided ticks: %u", ticks_to_wait);
+        ESP_LOGE(TAG, "Time not synchronized within the provided ticks: %"PRIu32"", ticks_to_wait);
         return ESP_FAIL;
     }
 

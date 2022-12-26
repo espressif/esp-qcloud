@@ -21,7 +21,7 @@ extern "C"
 {
 #endif
 
-/** Intialise ESP QCloud Storage
+/** Initialise ESP QCloud Storage
  *
  * This API is internally called by esp_qcloud_init(). Applications may call this
  * only if access to the ESP QCloud storage is required before esp_qcloud_init().

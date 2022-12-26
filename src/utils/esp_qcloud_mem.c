@@ -40,7 +40,7 @@ void esp_qcloud_mem_add_record(void *ptr, int size, const char *tag, int line)
         return;
     }
 
-    ESP_LOGV(TAG, "<%s : %d> Alloc ptr: %p, size: %d, heap free: %d", tag, line,
+    ESP_LOGV(TAG, "<%s : %d> Alloc ptr: %p, size: %d, heap free: %"PRIu32"", tag, line,
              ptr, (int)size, esp_get_free_heap_size());
 
     if (!g_mem_info) {
@@ -80,7 +80,7 @@ void esp_qcloud_mem_remove_record(void *ptr, const char *tag, int line)
         return;
     }
 
-    ESP_LOGV(TAG, "<%s : %d> Free ptr: %p, heap free: %d", tag, line, ptr, esp_get_free_heap_size());
+    ESP_LOGV(TAG, "<%s : %d> Free ptr: %p, heap free: %"PRIu32"", tag, line, ptr, esp_get_free_heap_size());
 
     if (!g_mem_info) {
         g_mem_info = calloc(QCLOUD_MEM_DBG_INFO_MAX, sizeof(esp_qcloud_mem_info_t));
@@ -105,7 +105,7 @@ void esp_qcloud_mem_remove_record(void *ptr, const char *tag, int line)
 
 void esp_qcloud_mem_print_record(void)
 {
-    size_t total_size = 0;
+    uint32_t total_size = 0;
 
     if (!QCLOUD_MEM_DEBUG) {
         ESP_LOGW(TAG, "Please enable memory record");
@@ -118,13 +118,13 @@ void esp_qcloud_mem_print_record(void)
 
     for (int i = 0; i < QCLOUD_MEM_DBG_INFO_MAX; i++) {
         if (g_mem_info[i].size) {
-            ESP_LOGI(TAG, "(%d) <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
+            ESP_LOGI(TAG, "(%"PRIu32") <%s: %d> ptr: %p, size: %d", g_mem_info[i].timestamp, g_mem_info[i].tag, g_mem_info[i].line,
                      g_mem_info[i].ptr, g_mem_info[i].size);
             total_size += g_mem_info[i].size;
         }
     }
 
-    ESP_LOGI(TAG, "Memory record, num: %d, size: %d", g_mem_count, total_size);
+    ESP_LOGI(TAG, "Memory record, num: %"PRIu32", size: %"PRIu32"", g_mem_count, total_size);
 }
 
 #if ( ( configUSE_TRACE_FACILITY == 1 ) && ( configUSE_STATS_FORMATTING_FUNCTIONS > 0 ) )
@@ -172,7 +172,7 @@ void esp_qcloud_mem_print_task()
 #endif
 
         /* Write the rest of the string. */
-        ESP_LOGI(TAG, "%-16s\t%c\t%u\t%u\t%u\t%hd\t%-16u%-s%%",
+        ESP_LOGI(TAG, "%-16s\t%c\t%"PRIu32"\t%"PRIu32"\t%"PRIu32"\t%hd\t%"PRIu32"%-s%%",
                  pxTaskStatusArray[i].pcTaskName, task_status_char[pxTaskStatusArray[i].eCurrentState],
                  (uint32_t) pxTaskStatusArray[i].uxCurrentPriority,
                  (uint32_t) pxTaskStatusArray[i].usStackHighWaterMark,
@@ -188,10 +188,10 @@ void esp_qcloud_mem_print_task()
 void esp_qcloud_mem_print_heap(void)
 {
 #ifndef CONFIG_SPIRAM_SUPPORT
-    ESP_LOGI(TAG, "Free heap, current: %d, minimum: %d",
+    ESP_LOGI(TAG, "Free heap, current:  %"PRIu32", minimum:  %"PRIu32"",
              esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
 #else
-    ESP_LOGI(TAG, "Free heap, internal current: %d, minimum: %d, total current: %d, minimum: %d",
+    ESP_LOGI(TAG, "Free heap, internal current: %"PRIu32", minimum: %"PRIu32", total current: %"PRIu32", minimum: %"PRIu32"",
              heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL),
              heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL),
              esp_get_free_heap_size(), esp_get_minimum_free_heap_size());

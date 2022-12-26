@@ -28,7 +28,7 @@
 #include <esp_log.h>
 #include "esp_smartconfig.h"
 
-#ifdef CONFIG_LIGHT_PROVISIONING_BLECONFIG
+#ifdef CONFIG_QCLOUD_ENABLE_BLECONFIG
 #include "esp_blufi_api.h"
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
@@ -75,7 +75,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
         ESP_LOGI(TAG, "Connected with IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
 
-#ifdef CONFIG_LIGHT_PROVISIONING_BLECONFIG
+#ifdef CONFIG_QCLOUD_ENABLE_BLECONFIG
         wifi_mode_t mode;
         esp_blufi_extra_info_t info = { 0 };
         wifi_config_t sta_cfg   = { 0 };
@@ -85,11 +85,11 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
         info.sta_bssid_set = false;
         memcpy(info.sta_bssid, sta_cfg.sta.bssid, 6);
-        info.sta_ssid_len = strlen((char*)(sta_cfg.sta.ssid));
+        info.sta_ssid_len = strlen((char *)(sta_cfg.sta.ssid));
         info.sta_ssid = sta_cfg.sta.ssid;
-  
-        if(esp_qcloud_prov_ble_is_connected()){
-            ESP_LOGI(TAG, "info SSID: %s Len: %d", info.sta_ssid , info.sta_ssid_len);
+
+        if (esp_qcloud_prov_ble_is_connected()) {
+            ESP_LOGI(TAG, "info SSID: %s Len: %d", info.sta_ssid, info.sta_ssid_len);
             esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
         }
 #endif
@@ -99,36 +99,29 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
         ESP_LOGI(TAG, "STA Connecting to the AP again...");
         esp_qcloud_prov_smartconfig_stop();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED){
-        wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t*) event_data;
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t *) event_data;
         ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
-        if(disconnected->reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT){
+        if (disconnected->reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
 
-#ifdef CONFIG_LIGHT_PROVISIONING_BLECONFIG
-        esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
+#ifdef CONFIG_QCLOUD_ENABLE_BLECONFIG
+            esp_blufi_send_wifi_conn_report(WIFI_MODE_STA, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
 #endif
 
         }
     }
 }
 
-void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport)
+void esp_qcloud_prov_print_wechat_qr(void)
 {
-    if (!name || !transport) {
-        ESP_LOGW(TAG, "Cannot generate QR code payload. Data missing.");
-        return;
-    }
-
     char *qcloud_payload = NULL;
     char *terminal_payload = NULL;
 
-    asprintf(&terminal_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s&productId=%s&ver=%s&name=%s",
-             transport, esp_qcloud_get_product_id(), PROV_QR_VERSION, name);
+    asprintf(&terminal_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=adddevice&productId=%s&ver=%s", esp_qcloud_get_product_id(), PROV_QR_VERSION);
     ESP_LOGI(TAG, "Scan this QR code from the Wechat for Provisioning.");
     qrcode_display(terminal_payload);
-    
-    asprintf(&qcloud_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=%s%%26productId=%s%%26ver=%s%%26name=%s",
-             transport, esp_qcloud_get_product_id(), PROV_QR_VERSION, name);
+
+    asprintf(&qcloud_payload, "https://iot.cloud.tencent.com/iotexplorer/device?page=adddevice%%26productId=%s%%26ver=%s", esp_qcloud_get_product_id(), PROV_QR_VERSION);
     ESP_LOGI(TAG, "If QR code is not visible, copy paste the below URL in a browser.\n%s?data=%s",
              "https://rainmaker.espressif.com/qrcode.html", qcloud_payload);
 
@@ -236,7 +229,7 @@ static void udp_server_task(void *pvParameters)
             vTaskDelay(pdMS_TO_TICKS(i * 10));
             err = sendto(udp_server_sockfd, tx_buffer, strlen(tx_buffer), 0, (struct sockaddr *)&client_addr, sizeof(client_addr));
             ESP_QCLOUD_ERROR_CONTINUE(err < 0, "sendto failed, errno %d, err_str: %s", errno, strerror(errno));
-            
+
             break;
         }
 
@@ -292,8 +285,8 @@ esp_err_t esp_qcloud_prov_wait(wifi_config_t *sta_cfg, uint32_t wait_ms)
     g_wifi_event_group = xEventGroupCreate();
 
     /* Wait for Wi-Fi connection */
-     EventBits_t bits = xEventGroupWaitBits(g_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED | QCLOUD_PROV_EVENT_GET_TOKEN,
-                        false, true, pdMS_TO_TICKS(wait_ms));
+    EventBits_t bits = xEventGroupWaitBits(g_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED | QCLOUD_PROV_EVENT_GET_TOKEN,
+                                           false, true, pdMS_TO_TICKS(wait_ms));
     if ((bits & QCLOUD_PROV_EVENT_GET_TOKEN) && (bits & QCLOUD_PROV_EVENT_STA_CONNECTED) ) {
         esp_qcloud_storage_set("token", g_token, AUTH_TOKEN_MAX_SIZE);
         esp_wifi_get_config(ESP_IF_WIFI_STA, sta_cfg);

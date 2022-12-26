@@ -17,10 +17,14 @@
 #include "mbedtls/base64.h"
 
 #include "esp_system.h"
-#include "esp_spi_flash.h"
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_console.h"
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+#include "esp_chip_info.h"
+#include "spi_flash_mmap.h"
+#endif
+#include "esp_flash.h"
 
 #include "esp_qcloud_log.h"
 #include "esp_qcloud_console.h"
@@ -51,19 +55,21 @@ static struct {
 static int version_func(int argc, char **argv)
 {
     esp_chip_info_t chip_info = {0};
+    uint32_t flash_size;
+    esp_flash_get_size(NULL, &flash_size);
 
     /**< Pint system information */
     esp_chip_info(&chip_info);
     ESP_LOGI(TAG, "compile time     : %s %s", __DATE__, __TIME__);
-    ESP_LOGI(TAG, "free heap        : %d Bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "CPU cores        : %d", chip_info.cores);
-    ESP_LOGI(TAG, "silicon revision : %d", chip_info.revision);
-    ESP_LOGI(TAG, "feature          : %s%s%s%s%d%s",
+    ESP_LOGI(TAG, "free heap        : %"PRIu32" Bytes", esp_get_free_heap_size());
+    ESP_LOGI(TAG, "CPU cores        : %"PRIu8"", chip_info.cores);
+    ESP_LOGI(TAG, "silicon revision : %"PRIu16"", chip_info.revision);
+    ESP_LOGI(TAG, "feature          : %s%s%s%s%"PRIu32"%s",
              chip_info.features & CHIP_FEATURE_WIFI_BGN ? "/802.11bgn" : "",
              chip_info.features & CHIP_FEATURE_BLE ? "/BLE" : "",
              chip_info.features & CHIP_FEATURE_BT ? "/BT" : "",
              chip_info.features & CHIP_FEATURE_EMB_FLASH ? "/Embedded-Flash:" : "/External-Flash:",
-             spi_flash_get_chip_size() / (1024 * 1024), " MB");
+             flash_size, " MB");
 
     return ESP_OK;
 }

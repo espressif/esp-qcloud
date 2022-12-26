@@ -67,11 +67,11 @@ menu "ESP QCloud Configuration"
             help
                 This allows you to skip the project name check.
 
-        config QCLOUD_USE_HTTPS_UPDATA
-            bool "Use https updata"
+        config QCLOUD_USE_HTTPS_UPDATE
+            bool "Use https update"
             default n
             help
-                This allows you to use https updata firmware.
+                This allows you to use https update firmware.
     endmenu
 
     menu "ESP QCloud utils"
@@ -151,6 +151,15 @@ menu "ESP QCloud Configuration"
             default n
             help
                 Output the `printf` information of the QCloud module
+    endmenu
+
+    menu "ESP QCloud Provisioning Config"
+        config QCLOUD_ENABLE_BLECONFIG
+            depends on BT_BLE_BLUFI_ENABLE
+            bool "Enable BLE Provisioning"
+            default y 
+            help
+                Enable BLE Provisioning.
     endmenu
 
     choice QCLOUD_CONSOLE_UART_NUM

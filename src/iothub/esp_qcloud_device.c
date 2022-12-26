@@ -135,7 +135,7 @@ esp_err_t esp_qcloud_create_device()
     if (strlen(g_device_profile->device_secret) != DEVICE_SECRET_SIZE
             || strlen(g_device_profile->product_id) != PRODUCT_ID_SIZE) {
         ESP_LOGE(TAG, "Please check if the authentication information of the device is configured");
-        ESP_LOGE(TAG, "Obtain authentication configuration information from login qcloud iothut: ");
+        ESP_LOGE(TAG, "Obtain authentication configuration information from login qcloud iothub: ");
         ESP_LOGE(TAG, "https://console.cloud.tencent.com/iotexplorer");
         ESP_LOGE(TAG, "product_id: %s", g_device_profile->product_id);
         ESP_LOGE(TAG, "device_name: %s", g_device_profile->device_name);
@@ -153,13 +153,13 @@ esp_err_t esp_qcloud_create_device()
      *        3. Replace the certificate file in the config directory
      */
 
-    g_device_profile->cert_crt = (char*)dev_cert_crt_start;
-    g_device_profile->private_key = (char*)dev_private_key_start;
+    g_device_profile->cert_crt = (char *)dev_cert_crt_start;
+    g_device_profile->private_key = (char *)dev_private_key_start;
 
     if (strlen(g_device_profile->product_id) != PRODUCT_ID_SIZE
-        || strlen(g_device_profile->cert_crt) == DEVICE_CERT_FILE_DEFAULT_SIZE) {
+            || strlen(g_device_profile->cert_crt) == DEVICE_CERT_FILE_DEFAULT_SIZE) {
         ESP_LOGE(TAG, "Please check if the authentication information of the device is configured");
-        ESP_LOGE(TAG, "Obtain authentication configuration information from login qcloud iothut: ");
+        ESP_LOGE(TAG, "Obtain authentication configuration information from login qcloud iothub: ");
         ESP_LOGE(TAG, "https://console.cloud.tencent.com/iotexplorer");
         ESP_LOGE(TAG, "product_id: %s", g_device_profile->product_id);
         ESP_LOGE(TAG, "device_name: %s", g_device_profile->device_name);
@@ -251,7 +251,7 @@ esp_err_t esp_qcloud_device_add_action_cb(const char *action_id, const esp_qclou
 }
 
 esp_err_t esp_qcloud_device_add_property_cb(const esp_qcloud_get_param_t get_param_cb,
-                                   const esp_qcloud_set_param_t set_param_cb)
+        const esp_qcloud_set_param_t set_param_cb)
 {
     g_esp_qcloud_get_param = get_param_cb;
     g_esp_qcloud_set_param = set_param_cb;
@@ -267,25 +267,25 @@ esp_err_t esp_qcloud_handle_set_param(const cJSON *request_params, cJSON *reply_
         esp_qcloud_param_val_t value = {0};
 
         switch (item->type) {
-            case cJSON_False:
-                value.b = false;
-                break;
+        case cJSON_False:
+            value.b = false;
+            break;
 
-            case cJSON_True:
-                value.b = true;
-                break;
+        case cJSON_True:
+            value.b = true;
+            break;
 
-            case cJSON_Number:
-                value.i = item->valueint;
-                value.f = item->valuedouble;
-                break;
+        case cJSON_Number:
+            value.i = item->valueint;
+            value.f = item->valuedouble;
+            break;
 
-            case cJSON_String:
-                value.s = item->valuestring;
-                break;
+        case cJSON_String:
+            value.s = item->valuestring;
+            break;
 
-            default:
-                break;
+        default:
+            break;
         }
 
         err = g_esp_qcloud_set_param(item->string, &value);
@@ -326,7 +326,7 @@ esp_err_t esp_qcloud_operate_action(esp_qcloud_method_t *action_handle, const ch
 
     esp_qcloud_action_t *action;
     SLIST_FOREACH(action, &g_action_list, next) {
-        if(!strcmp(action->id, action_id)){
+        if (!strcmp(action->id, action_id)) {
             return action->action_cb(action_handle, params);
         }
     }

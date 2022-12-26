@@ -38,35 +38,35 @@ static void smartconfig_event_handler(void *arg, esp_event_base_t event_base,
                                       int32_t  event_id, void *event_data)
 {
     switch (event_id) {
-        case SC_EVENT_SCAN_DONE:
-            ESP_LOGI(TAG, "Scan done");
-            break;
+    case SC_EVENT_SCAN_DONE:
+        ESP_LOGI(TAG, "Scan done");
+        break;
 
-        case SC_EVENT_FOUND_CHANNEL:
-            ESP_LOGI(TAG, "Found channel");
-            break;
+    case SC_EVENT_FOUND_CHANNEL:
+        ESP_LOGI(TAG, "Found channel");
+        break;
 
-        case SC_EVENT_GOT_SSID_PSWD: {
-            wifi_config_t wifi_config = {0};
-            smartconfig_event_got_ssid_pswd_t *evt = (smartconfig_event_got_ssid_pswd_t *)event_data;
+    case SC_EVENT_GOT_SSID_PSWD: {
+        wifi_config_t wifi_config = {0};
+        smartconfig_event_got_ssid_pswd_t *evt = (smartconfig_event_got_ssid_pswd_t *)event_data;
 
-            ESP_LOGI(TAG, "Got SSID and password, ssid: %s, password: %s", evt->ssid, evt->password);
-            memcpy(wifi_config.sta.ssid, evt->ssid, sizeof(wifi_config.sta.ssid));
-            memcpy(wifi_config.sta.password, evt->password, sizeof(wifi_config.sta.password));
-            memset(evt->cellphone_ip, 0xff, sizeof(evt->cellphone_ip));
-            sc_send_ack_start(evt->type, evt->token, evt->cellphone_ip);
+        ESP_LOGI(TAG, "Got SSID and password, ssid: %s, password: %s", evt->ssid, evt->password);
+        memcpy(wifi_config.sta.ssid, evt->ssid, sizeof(wifi_config.sta.ssid));
+        memcpy(wifi_config.sta.password, evt->password, sizeof(wifi_config.sta.password));
+        memset(evt->cellphone_ip, 0xff, sizeof(evt->cellphone_ip));
+        sc_send_ack_start(evt->type, evt->token, evt->cellphone_ip);
 
-            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-            ESP_ERROR_CHECK(esp_wifi_connect());
-            break;
-        }
+        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+        ESP_ERROR_CHECK(esp_wifi_connect());
+        break;
+    }
 
-        case SC_EVENT_SEND_ACK_DONE :
-            ESP_LOGI(TAG, "SC_EVENT_SEND_ACK_DONE");
-            break;
+    case SC_EVENT_SEND_ACK_DONE :
+        ESP_LOGI(TAG, "SC_EVENT_SEND_ACK_DONE");
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 }
 

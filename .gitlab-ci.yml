@@ -15,29 +15,11 @@ before_script:
   - . ./export.sh
   - cd -
 
-.build_examples_template: &build_examples_template
+build_demo_v4.3:
   stage: build
   image: espressif/idf:release-v4.3
   tags:
     - build
-  # Artifacts are not used temporarily
-  # artifacts:
-  #   when: always
-  #   paths:
-  #     - $LOG_PATH
-  #   expire_in: 1 week
-  # variables:
-  #   LOG_PATH: "$CI_PROJECT_DIR/log_examples"
-
-# build_demo_make:
-#   <<: *build_examples_template
-#   script:
-#     - cd examples/led_light
-#     - make defconfig && make -j5
-#     - cd ../../
-
-build_demo_cmake:
-  <<: *build_examples_template
   script:
     - cd examples/led_light
     - idf.py set-target esp32
@@ -45,6 +27,40 @@ build_demo_cmake:
     - idf.py set-target esp32s2
     - idf.py build
     - idf.py set-target esp32c3
+    - idf.py build
+    - cd ../../
+
+build_demo_v4.4:
+  stage: build
+  image: espressif/idf:release-v4.4
+  tags:
+    - build
+  script:
+    - cd examples/led_light
+    - idf.py set-target esp32
+    - idf.py build
+    - idf.py set-target esp32s2
+    - idf.py build
+    - idf.py set-target esp32c3
+    - idf.py build
+    - idf.py set-target esp32s3
+    - idf.py build
+    - cd ../../
+  
+build_demo_v5.0:
+  stage: build
+  image: espressif/idf:release-v5.0
+  tags:
+    - build
+  script:
+    - cd examples/led_light
+    - idf.py set-target esp32
+    - idf.py build
+    - idf.py set-target esp32s2
+    - idf.py build
+    - idf.py set-target esp32c3
+    - idf.py build
+    - idf.py set-target esp32s3
     - idf.py build
     - cd ../../
 

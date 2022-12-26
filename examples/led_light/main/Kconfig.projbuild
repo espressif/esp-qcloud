@@ -1,85 +1,92 @@
 menu "ESP QCloud Example Configuration"
     menu "Light development board selection "
-        choice LIGHT_TYPE
-            prompt "light hardware type"
-            default LIGHT_TYPE_MOONLIGHT
-            help
-                Choose different types of lamp development boards.
-    
-            config LIGHT_TYPE_MOONLIGHT
-                bool "ESP32 moonlight"
-            config LIGHT_TYPE_MESHKIT
-                bool "ESP32-MeshKit Light"
-            config LIGHT_TYPE_CUSTOM
-                bool "Custom"
+        choice LIGHTBULB_DEMO_DRIVER_SELECT
+                bool "Demo select"
+                default LIGHTBULB_DEMO_DRIVER_SELECT_WS2812 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2
+                default LIGHTBULB_DEMO_DRIVER_SELECT_PWM
+                help
+                    Select the driver type you want to demonstrate
+
+                config LIGHTBULB_DEMO_DRIVER_SELECT_SM2135E
+                    bool "Demo SM2135E"
+                config LIGHTBULB_DEMO_DRIVER_SELECT_WS2812
+                    bool "Demo WS2812"
+                config LIGHTBULB_DEMO_DRIVER_SELECT_PWM
+                    bool "Demo PWM"
         endchoice
 
-        config LIGHT_GPIO_RED
-            int "Light red pin GPIO number"
-            depends on LIGHT_TYPE_CUSTOM
-            range 0 46
+        config WS2812_LED_GPIO
+            int "WS2812 LED GPIO"
+            default 8 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2
+            default 18 if IDF_TARGET_ESP32S2
+            default 48 if IDF_TARGET_ESP32S3
+            default 4 if IDF_TARGET_ESP32C2
+            default 18
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_WS2812
+            help
+                Set the WS2812 RGB LED GPIO.
+
+        config WS2812_LED_NUM
+            int "WS2812 LED NUM"
+            default 1
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_WS2812
+            help
+                Set the WS2812 LED NUM.
+
+        config PWM_FREQ_HZ
+            int "PWM Frequency (hz)"
+            default 4000
+            range 2000 5000
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_PWM
+            help
+                Set the PWM Frequency (hz).
+
+        config PWM_RED_GPIO
+            int "PWM Red GPIO"
+            default 10 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2
+            default 15 if IDF_TARGET_ESP32S3
+            default 0 if IDF_TARGET_ESP32C2
+            default 23 if IDF_TARGET_ESP32H2
             default 25
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_PWM
             help
-                There are more enumerations like that
-                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-                They are not shown here to reduce redundant information.
-                @note GPIO34..39 are input mode only.
-        
-        config LIGHT_GPIO_GREEN
-            int "Light green pin GPIO number"
-            depends on LIGHT_TYPE_CUSTOM
-            range 0 46
+                Set the PWM Red LED GPIO.
+
+        config PWM_GREEN_GPIO
+            int "PWM Green GPIO"
+            default 6 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2
+            default 16 if IDF_TARGET_ESP32S3
+            default 1 if IDF_TARGET_ESP32C2
+            default 24 if IDF_TARGET_ESP32H2
             default 26
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_PWM
             help
-                There are more enumerations like that
-                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-                They are not shown here to reduce redundant information.
-                @note GPIO34..39 are input mode only.
-        
-        config LIGHT_GPIO_BLUE
-            int "Light blue pin GPIO number"
-            depends on LIGHT_TYPE_CUSTOM
-            range 0 46
+                Set the PWM Green LED GPIO.
+
+        config PWM_BLUE_GPIO
+            int "PWM Blue GPIO"
+            default 7 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2
+            default 17 if IDF_TARGET_ESP32S3
+            default 8 if IDF_TARGET_ESP32C2
+            default 25 if IDF_TARGET_ESP32H2
             default 27
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_PWM
             help
-                There are more enumerations like that
-                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-                They are not shown here to reduce redundant information.
-                @note GPIO34..39 are input mode only.
-        
-        config LIGHT_GPIO_COLD
-            int "Light cold color pin GPIO number"
-            depends on LIGHT_TYPE_CUSTOM
-            range 0 46
-            default 23
+                Set the PWM Blue LED GPIO.
+
+        config SM2135E_IIC_CLK_GPIO
+            int "SM2135E IIC CLK GPIO"
+            default 4
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_SM2135E
             help
-                There are more enumerations like that
-                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-                They are not shown here to reduce redundant information.
-                @note GPIO34..39 are input mode only.
-        
-        config LIGHT_GPIO_WARM
-            int "Light warm color pin GPIO number"
-            depends on LIGHT_TYPE_CUSTOM
-            range 0 46
-            default 19
+                Set the SM2135E CLK GPIO.
+
+        config SM2135E_IIC_SDA_GPIO
+            int "SM2135E IIC SDA GPIO"
+            default 5
+            depends on LIGHTBULB_DEMO_DRIVER_SELECT_SM2135E
             help
-                There are more enumerations like that
-                up to GPIO39, excluding GPIO20, GPIO24 and GPIO28..31.
-                They are not shown here to reduce redundant information.
-                @note GPIO34..39 are input mode only.
-        
-        config LIGHT_FADE_PERIOD_MS
-            int "The time from the current color to the next color"
-            default 500
-            help
-                The time from the current color to the next color.
-        
-        config LIGHT_BLINK_PERIOD_MS
-            int "Period of blinking lights"
-            default 3000
-            help
-                Period of blinking lights.
+                Set the SM2135E SDA GPIO.
     endmenu
 
 menu "Light provisioning network selection"
@@ -96,7 +103,7 @@ menu "Light provisioning network selection"
                 "Enable SoftAP's network configuration method"
 
         config LIGHT_PROVISIONING_BLECONFIG
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3
+            depends on QCLOUD_ENABLE_BLECONFIG
             bool "Enable BLE's network configuration method"
             default y
             help
@@ -108,14 +115,6 @@ menu "Light provisioning network selection"
             default "tcloud_XXX"
             help
                 SSID (network name) for the phone to connect to.
-
-        config LIGHT_PROVISIONING_SOFTAPCONFIG_PASSWORD
-            depends on LIGHT_PROVISIONING_SOFTAPCONFIG
-            string "SoftAP password"
-            default ""
-            help
-                WiFi password (WPA or WPA2) for the example to use.
-                Can be left blank if the network has no security set.
 
         config LIGHT_PROVISIONING_BLECONFIG_NAME
             depends on LIGHT_PROVISIONING_BLECONFIG

@@ -29,7 +29,7 @@ extern "C" {
 #include "esp_qcloud_mem.h"
 
 /**
- *@brief Configuration mdebug print enable, whether the output information according to the client needs to know.
+ *@brief Configuration debug print enable, whether the output information according to the client needs to know.
  *       please assign CONFIG_QCLOUD_LOG_PRINTF_ENABLE a value.
  */
 #ifdef CONFIG_QCLOUD_LOG_PRINTF_ENABLE

@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #ifndef MALLOC_CAP_TYPE
-#define MALLOC_CAP_TYPE MALLOC_CAP_DEFAULT 
+#define MALLOC_CAP_TYPE MALLOC_CAP_DEFAULT
 #endif
 
 /**
@@ -69,7 +69,7 @@ void esp_qcloud_mem_remove_record(void *ptr, const char *tag, int line);
 /**
  * @brief Print the all allocation but not released memory
  *
- * @attention Must configure CONFIG_QCLOUD_MEM_DEBUG == y annd esp_log_level_set(esp_qcloud_mem, ESP_LOG_INFO);
+ * @attention Must configure CONFIG_QCLOUD_MEM_DEBUG == y and esp_log_level_set(esp_qcloud_mem, ESP_LOG_INFO);
  */
 void esp_qcloud_mem_print_record(void);
 
@@ -96,7 +96,7 @@ void esp_qcloud_mem_print_task(void);
         void *ptr = heap_caps_malloc(size, MALLOC_CAP_TYPE); \
         if (QCLOUD_MEM_DEBUG) { \
             if(!ptr) { \
-                ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Malloc size: %d, ptr: %p, heap free: %d", (int)size, ptr, esp_get_free_heap_size()); \
+                ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Malloc size: %"PRIu32", ptr: %p, heap free: %"PRIu32"", (uint32_t)size, ptr, esp_get_free_heap_size()); \
             } else { \
                 esp_qcloud_mem_add_record(ptr, size, TAG, __LINE__); \
             } \
@@ -118,7 +118,7 @@ void esp_qcloud_mem_print_task(void);
         void *ptr = heap_caps_calloc(n, size, MALLOC_CAP_TYPE); \
         if (QCLOUD_MEM_DEBUG) { \
             if(!ptr) { \
-                ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Calloc size: %d, ptr: %p, heap free: %d", (int)(n) * (size), ptr, esp_get_free_heap_size()); \
+                ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Calloc size: %"PRIu32", ptr: %p, heap free: %"PRIu32"", (uint32_t)(n) * (size), ptr, esp_get_free_heap_size()); \
             } else { \
                 esp_qcloud_mem_add_record(ptr, (n) * (size), TAG, __LINE__); \
             } \
@@ -140,7 +140,7 @@ void esp_qcloud_mem_print_task(void);
         void *new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_TYPE); \
         if (QCLOUD_MEM_DEBUG) { \
             if(!new_ptr) { \
-                ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
+                ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Realloc size: %"PRIu32", new_ptr: %p, heap free: %"PRIu32"", (uint32_t)size, new_ptr, esp_get_free_heap_size()); \
             } else { \
                 esp_qcloud_mem_remove_record(ptr, TAG, __LINE__); \
                 esp_qcloud_mem_add_record(new_ptr, size, TAG, __LINE__); \
@@ -163,7 +163,7 @@ void esp_qcloud_mem_print_task(void);
 #define ESP_QCLOUD_REALLOC_RETRY(ptr, size) ({ \
         void *new_ptr = NULL; \
         while (size > 0 && !(new_ptr = heap_caps_realloc(ptr, size, MALLOC_CAP_TYPE))) { \
-            ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Realloc size: %d, new_ptr: %p, heap free: %d", (int)size, new_ptr, esp_get_free_heap_size()); \
+            ESP_LOGW(TAG, "<ESP_ERR_NO_MEM> Realloc size: %"PRIu32", new_ptr: %p, heap free: %"PRIu32"", (uint32_t)size, new_ptr, esp_get_free_heap_size()); \
             vTaskDelay(pdMS_TO_TICKS(100)); \
         } \
         if (QCLOUD_MEM_DEBUG) { \
@@ -178,7 +178,7 @@ void esp_qcloud_mem_print_task(void);
  *
  * @param  ptr  Memory pointer
  */
-#define ESP_QCLOUD_FREE(ptr) { \
+#define ESP_QCLOUD_FREE(ptr) do { \
         if(ptr) { \
             free(ptr); \
             if (QCLOUD_MEM_DEBUG) { \

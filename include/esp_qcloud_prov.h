@@ -30,9 +30,13 @@ extern "C"
 #include <esp_log.h>
 #include "esp_smartconfig.h"
 
+#ifdef CONFIG_QCLOUD_ENABLE_BLECONFIG
+#include "esp_bt.h"
+#endif
+
 /**
  * @brief softconfig type
- * 
+ *
  */
 typedef enum {
     SOFTAPCONFIG_TYPE_ESPRESSIF = 1,       /**< protocol: Espressif */
@@ -48,7 +52,7 @@ typedef enum {
 
 /**
  * @brief Initialize wifi and register events.
- * 
+ *
  * @return
  *     - ESP_OK: succeed
  *     - others: fail
@@ -57,7 +61,7 @@ esp_err_t esp_qcloud_wifi_init(void);
 
 /**
  * @brief Use sta_cfg parameters to start wifi.
- * 
+ *
  * @param[in] sta_cfg sta mode configuration parameters.
  * @return
  *     - ESP_OK: succeed
@@ -67,14 +71,14 @@ esp_err_t esp_qcloud_wifi_start(const wifi_config_t *sta_cfg);
 
 /**
  * @brief Reset wifi
- * 
- * @return esp_err_t 
+ *
+ * @return esp_err_t
  */
 esp_err_t esp_qcloud_wifi_reset(void);
 
 /**
  * @brief Start SmartConfig.
- * 
+ *
  * @param[in] type Choose from the smartconfig_type_t.
  * @return
  *     - ESP_OK: succeed
@@ -84,7 +88,7 @@ esp_err_t esp_qcloud_prov_smartconfig_start(smartconfig_type_t type);
 
 /**
  * @brief Stop SmartConfig.
- * 
+ *
  * @return
  *     - ESP_OK: succeed
  *     - others: fail
@@ -93,7 +97,7 @@ esp_err_t esp_qcloud_prov_smartconfig_stop(void);
 
 /**
  * @brief Start softap.
- * 
+ *
  * @param[in] type Softap type, Espressif or Tencent.
  * @param[in] ssid SSID of the softap mode.
  * @param[in] password PassWord of the softap mode.
@@ -105,7 +109,7 @@ esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type, const cha
 
 /**
  * @brief Stop softap.
- * 
+ *
  * @return
  *     - ESP_OK: succeed
  *     - others: fail
@@ -113,22 +117,22 @@ esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type, const cha
 esp_err_t esp_qcloud_prov_softapconfig_stop(void);
 
 /**
- * @brief 
- * 
- * @return esp_err_t 
+ * @brief
+ *
+ * @return esp_err_t
  */
 esp_err_t esp_qcloud_prov_bleconfig_start(bleconfig_type_t type, const char *local_name);
 
 /**
- * @brief 
- * 
- * @return esp_err_t 
+ * @brief
+ *
+ * @return esp_err_t
  */
 esp_err_t esp_qcloud_prov_ble_stop(void);
 
 /**
  * @brief Wait for the provisioning result.
- * 
+ *
  * @param[in/out] sta_cfg Save SSID and password.
  * @param[in] wait_ms Time to wait before timeout, in ms.
  * @return
@@ -138,18 +142,16 @@ esp_err_t esp_qcloud_prov_ble_stop(void);
 esp_err_t esp_qcloud_prov_wait(wifi_config_t *sta_cfg, uint32_t wait_ms);
 
 /**
- * @brief Print the QR code in softap provisioning mode.
- * 
- * @param[in] name SSID of the softap mode.
- * @param[in] transport 
+ * @brief Print the QR code.
+ *
  */
-void esp_qcloud_prov_print_wechat_qr(const char *name, const char *transport);
+void esp_qcloud_prov_print_wechat_qr(void);
 
 /**
  * @brief Report binding status
- * 
- * @param token_status 
- * @return esp_err_t 
+ *
+ * @param token_status
+ * @return esp_err_t
  */
 esp_err_t esp_qcloud_prov_ble_report_bind_status(bool token_status);
 

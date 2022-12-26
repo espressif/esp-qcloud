@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/queue.h>
+
 #include "esp_wifi.h"
 #include "esp_console.h"
 
@@ -29,7 +33,7 @@
 #define CONFIG_QCLOUD_LOG_MAX_SIZE          1024  /**< Set log length size */
 
 static const char *TAG  = "esp_qcloud_log";
-static xQueueHandle g_log_queue              = NULL;
+static QueueHandle_t g_log_queue              = NULL;
 static bool g_log_init_flag                  = false;
 static esp_qcloud_log_config_t *g_log_config = NULL;
 
@@ -76,38 +80,38 @@ static ssize_t esp_qcloud_log_vprintf(const char *fmt, va_list vp)
      * @brief Remove the header and tail that appear in the string in the log
      *
      */
-    if(log_info->size == 0 ) {
+    if (log_info->size == 0 ) {
         ESP_QCLOUD_LOG_FREE(log_info->data);
         ESP_QCLOUD_LOG_FREE(log_info);
         return 0;
     }
-    
+
     if (log_info->size > 7) {
         uint8_t log_level_index = (log_info->data[0] == '\033') ? 7 : 0;
 
         switch (log_info->data[log_level_index]) {
-            case 'E':
-                log_info->level = ESP_LOG_ERROR;
-                break;
+        case 'E':
+            log_info->level = ESP_LOG_ERROR;
+            break;
 
-            case 'W':
-                log_info->level = ESP_LOG_WARN;
-                break;
+        case 'W':
+            log_info->level = ESP_LOG_WARN;
+            break;
 
-            case 'I':
-                log_info->level = ESP_LOG_INFO;
-                break;
+        case 'I':
+            log_info->level = ESP_LOG_INFO;
+            break;
 
-            case 'D':
-                log_info->level = ESP_LOG_DEBUG;
-                break;
+        case 'D':
+            log_info->level = ESP_LOG_DEBUG;
+            break;
 
-            case 'V':
-                log_info->level = ESP_LOG_VERBOSE;
-                break;
+        case 'V':
+            log_info->level = ESP_LOG_VERBOSE;
+            break;
 
-            default:
-                break;
+        default:
+            break;
         }
     }
 
