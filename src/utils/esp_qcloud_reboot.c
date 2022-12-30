@@ -34,6 +34,8 @@
 #include "esp32s2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/rtc.h"
 #endif
 
 #define REBOOT_RECORD_KEY   "reboot_record"
@@ -93,7 +95,7 @@ static esp_err_t esp_qcloud_reboot_unbroken_init()
     g_reboot_record.total_count++;
 
     /**< If the device reboots within the instruction time,
-         the event_mdoe value will be incremented by one */
+         the event_mode value will be incremented by one */
     if (g_reboot_record.reason != DEEPSLEEP_RESET && g_reboot_record.reason != RTCWDT_BROWN_OUT_RESET) {
         g_reboot_record.unbroken_count++;
         ESP_LOGD(TAG, "reboot unbroken count: %d", g_reboot_record.unbroken_count);

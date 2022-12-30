@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include <sys/param.h>
+#include <errno.h>
 
 #include "esp_wifi.h"
 #include "esp_console.h"
@@ -146,7 +147,7 @@ esp_err_t esp_qcloud_log_flash_init()
 
     ESP_QCLOUD_ERROR_CHECK(!g_log_part, ESP_ERR_NOT_SUPPORTED, "esp_partition_get");
     ESP_QCLOUD_ERROR_CHECK(g_log_part->size < LOG_FLASH_FILE_MAX_SIZE, ESP_ERR_NOT_SUPPORTED,
-                           "Log file (%d Byte) size must be smaller than partition size (%d Byte).",
+                           "Log file (%d Byte) size must be smaller than partition size (%"PRIu32" Byte).",
                            LOG_FLASH_FILE_MAX_SIZE, g_log_part->size);
     ESP_QCLOUD_ERROR_CHECK(LOG_FLASH_FILE_MAX_SIZE / LOG_FLASH_FILE_MAX_NUM % 4096 != 0, ESP_ERR_NOT_SUPPORTED,
                            "The size of the log partition must be an integer of %d KB.", LOG_FLASH_FILE_MAX_NUM * 4);
@@ -172,7 +173,7 @@ esp_err_t esp_qcloud_log_flash_init()
 
     g_esp_qcloud_log_flash_init_flag = true;
     ESP_LOGI(TAG, "LOG flash initialized successfully");
-    ESP_LOGI(TAG, "Log save partition subtype: label: %s, addr:0x%x, offset: %d, size: %d",
+    ESP_LOGI(TAG, "Log save partition subtype: label: %s, addr:0x%"PRIx32", offset: %d, size: %"PRIu32"",
              CONFIG_QCLOUD_LOG_PARTITION_LABEL_DATA, g_log_part->address, CONFIG_QCLOUD_LOG_PARTITION_OFFSET, g_log_part->size);
 
     return ESP_OK;
@@ -213,7 +214,7 @@ esp_err_t esp_qcloud_log_flash_write(const char *data, size_t size, esp_log_leve
         (g_log_info + g_log_index)->offset = 0;
 
         err = esp_partition_erase_range(g_log_part, (g_log_info + g_log_index)->addr, LOG_FLASH_FILE_MAX_SIZE / LOG_FLASH_FILE_MAX_NUM);
-        ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_partition_erase_range, addr: %x", (g_log_info + g_log_index)->addr);
+        ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_partition_erase_range, addr: %"PRIu32"", (g_log_info + g_log_index)->addr);
     }
 
     static uint32_t s_event_send_tick = 0;

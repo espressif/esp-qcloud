@@ -66,13 +66,17 @@ esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_lev
     esp_qcloud_log_iothub_t *log_data = ESP_QCLOUD_LOG_MALLOC(log_size + 1);
 
     /**
-     * @breif Construct iothub log data
+     * @brief Construct iothub log data
      */
     memset(log_data, '#', sizeof(esp_qcloud_log_iothub_t));
     log_data->ctrl_bytes[0] = 'P';
     memcpy(log_data->product_id, esp_qcloud_get_product_id(), strlen(esp_qcloud_get_product_id()));
     memcpy(log_data->device_name, esp_qcloud_get_device_name(), strlen(esp_qcloud_get_device_name()));
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+    sprintf(timestamp, "%010llu", mktime((struct tm *)log_time));
+#else
     sprintf(timestamp, "%010lu", mktime((struct tm *)log_time));
+#endif
     memcpy(log_data->timestamp, timestamp, sizeof(log_data->timestamp));
     sprintf(log_data->log_level, "%s", level_str[log_level]);
     strftime(timestamp, sizeof(timestamp), "|%F %T|", log_time);
@@ -100,7 +104,7 @@ esp_err_t esp_qcloud_log_iothub_write(const char *data, size_t size, esp_log_lev
     memcpy(log_data->signature, digest_str, sizeof(log_data->signature));
 
     /**
-     * @breif Send log data to iothub
+     * @brief Send log data to iothub
      */
     static esp_http_client_handle_t s_http_client = NULL;
 

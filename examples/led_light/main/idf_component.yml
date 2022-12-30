@@ -1,0 +1,3 @@
+dependencies:
+  idf: ">=4.3.2"
+  lightbulb_driver: "^0.0.9"

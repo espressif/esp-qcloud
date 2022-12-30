@@ -28,7 +28,12 @@
 
 static const char *TAG = "esp_qcloud_utils";
 
-static void show_system_info_timercb(void *timer)
+#ifndef MAC2STR
+#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+#endif
+
+static void show_system_info_timercb(TimerHandle_t tmr)
 {
     uint8_t sta_mac[6]        = {0};
     uint8_t primary           = 0;
@@ -39,8 +44,8 @@ static void show_system_info_timercb(void *timer)
     esp_wifi_get_channel(&primary, &second);
     esp_wifi_sta_get_ap_info(&ap_info);
 
-    ESP_LOGI(TAG, "System information sta_mac: " MACSTR ", channel: [%d/%d], rssi: %d, free_heap: %u, minimum_heap: %u",
-             MAC2STR(sta_mac), primary, second, ap_info.rssi, esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
+    printf("System information sta_mac: " MACSTR ", channel: [%"PRIu8"/%"PRId32"], rssi: %"PRId8", free_heap: %"PRIu32", minimum_heap: %"PRIu32"\r\n",
+             MAC2STR(sta_mac), primary, (uint32_t)second, ap_info.rssi, esp_get_free_heap_size(), esp_get_minimum_free_heap_size());
 
     if (!heap_caps_check_integrity_all(true)) {
         ESP_LOGE(TAG, "At least one heap is corrupt");

@@ -39,7 +39,7 @@
 #define QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS         8883
 #define QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS       1883
 
-#define QCLOUD_IOTHUB_BINDING_TIMEOUT              40000  
+#define QCLOUD_IOTHUB_BINDING_TIMEOUT              40000
 #define EVENT_VERSION                              "1.0"
 #define TOPIC_METHOD_NAME_MAX_SIZE                 16
 
@@ -100,7 +100,11 @@ static esp_err_t esp_qcloud_iothub_publish(const char *topic, const char *method
     cJSON_AddStringToObject(json_publish_data, "method", method);
 
     char *token = NULL;
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+    asprintf(&token, "%s-%05lu", esp_qcloud_get_device_name(), esp_random() % 100000);
+#else
     asprintf(&token, "%s-%05u", esp_qcloud_get_device_name(), esp_random() % 100000);
+#endif
     cJSON_AddStringToObject(json_publish_data, "clientToken", token);
     ESP_QCLOUD_FREE(token);
 
@@ -108,15 +112,15 @@ static esp_err_t esp_qcloud_iothub_publish(const char *topic, const char *method
         cJSON_AddItemReferenceToObject(json_publish_data, "params", data);
     }
 
-    if(extra_val){
-        if(!strcmp(method, "report")){
+    if (extra_val) {
+        if (!strcmp(method, "report")) {
             cJSON_AddNumberToObject(json_publish_data, "timestamp", extra_val->timestamp);
-        } else if(!strcmp(method, "event_post")){
+        } else if (!strcmp(method, "event_post")) {
             cJSON_AddStringToObject(json_publish_data, "type", extra_val->type);
             cJSON_AddStringToObject(json_publish_data, "eventId", extra_val->id);
             cJSON_AddStringToObject(json_publish_data, "version", extra_val->version);
             cJSON_AddNumberToObject(json_publish_data, "timestamp", extra_val->timestamp);
-        }  else if(!strcmp(method, "action_reply")) {
+        }  else if (!strcmp(method, "action_reply")) {
             cJSON_AddNumberToObject(json_publish_data, "code", extra_val->code);
             cJSON_AddStringToObject(json_publish_data, "status", esp_err_to_name(extra_val->code));
             cJSON_DeleteItemFromObject(json_publish_data, "clientToken");
@@ -167,8 +171,8 @@ static esp_err_t esp_qcloud_iothub_reply(const char *method, const char *token, 
     cJSON_Delete(json_publish_data);
 
     err = esp_qcloud_mqtt_publish(publish_topic, publish_data, strlen(publish_data));
-    ESP_QCLOUD_ERROR_GOTO(err != ESP_OK, EXIT, "<%s> Publispublish, topic: $thing/up/property/%s/%s, data: h to %s, data: %s",
-                          esp_err_to_name(err), esp_qcloud_get_product_id(), esp_qcloud_get_device_name(), publish_topic, publish_data);
+    ESP_QCLOUD_ERROR_GOTO(err != ESP_OK, EXIT, "<%s> publish, topic: $thing/up/property/%s/%s, data: %s",
+                          esp_err_to_name(err), esp_qcloud_get_product_id(), esp_qcloud_get_device_name(), publish_data);
 
     ESP_LOGI(TAG, "mqtt_publish, topic: %s, data: %s", publish_topic, publish_data);
 
@@ -184,70 +188,75 @@ static esp_err_t esp_qcloud_iothub_config(esp_qcloud_mqtt_config_t *mqtt_cfg)
     esp_err_t err = ESP_OK;
 
     asprintf(&mqtt_cfg->client_id, "%s%s", esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+    asprintf(&mqtt_cfg->username, "%s;%s;%05lu;%ld", mqtt_cfg->client_id,
+             QCLOUD_IOTHUB_DEVICE_SDK_APPID, esp_random() % 100000, LONG_MAX);
+#else
     asprintf(&mqtt_cfg->username, "%s;%s;%05u;%ld", mqtt_cfg->client_id,
              QCLOUD_IOTHUB_DEVICE_SDK_APPID, esp_random() % 100000, LONG_MAX);
+#endif
 
     switch (esp_qcloud_get_auth_mode()) {
-        case QCLOUD_AUTH_MODE_KEY: {
-            uint8_t digest[32] = {0};
-            uint8_t base64_psk[48] = {0};
-            size_t base64_len = 0;
-            mbedtls_md_context_t sha_ctx;
+    case QCLOUD_AUTH_MODE_KEY: {
+        uint8_t digest[32] = {0};
+        uint8_t base64_psk[48] = {0};
+        size_t base64_len = 0;
+        mbedtls_md_context_t sha_ctx;
 
-            err = mbedtls_base64_decode(base64_psk, sizeof(base64_psk), &base64_len,
-                                        (uint8_t *)esp_qcloud_get_device_secret(), strlen(esp_qcloud_get_device_secret()));
-            ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_base64_decode");
+        err = mbedtls_base64_decode(base64_psk, sizeof(base64_psk), &base64_len,
+                                    (uint8_t *)esp_qcloud_get_device_secret(), strlen(esp_qcloud_get_device_secret()));
+        ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_base64_decode");
 
-            mbedtls_md_init(&sha_ctx);
-            err = mbedtls_md_setup(&sha_ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
-            ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_setup");
-            err = mbedtls_md_hmac_starts(&sha_ctx, base64_psk, base64_len);
-            ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_hmac_starts");
-            err = mbedtls_md_hmac_update(&sha_ctx, (uint8_t *)mqtt_cfg->username, strlen(mqtt_cfg->username));
-            ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_hmac_update");
-            err = mbedtls_md_hmac_finish(&sha_ctx, digest);
-            ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_hmac_finish");
+        mbedtls_md_init(&sha_ctx);
+        err = mbedtls_md_setup(&sha_ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
+        ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_setup");
+        err = mbedtls_md_hmac_starts(&sha_ctx, base64_psk, base64_len);
+        ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_hmac_starts");
+        err = mbedtls_md_hmac_update(&sha_ctx, (uint8_t *)mqtt_cfg->username, strlen(mqtt_cfg->username));
+        ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_hmac_update");
+        err = mbedtls_md_hmac_finish(&sha_ctx, digest);
+        ESP_QCLOUD_ERROR_GOTO(err != 0, EXIT, "mbedtls_md_hmac_finish");
 
-            char *ptr_hd = mqtt_cfg->password = ESP_QCLOUD_CALLOC(1, 128);
+        char *ptr_hd = mqtt_cfg->password = ESP_QCLOUD_CALLOC(1, 128);
 
-            for (int i = 0; i < sizeof(digest); i++) {
-                ptr_hd += sprintf(ptr_hd, "%02x", digest[i]);
-            }
+        for (int i = 0; i < sizeof(digest); i++) {
+            ptr_hd += sprintf(ptr_hd, "%02x", digest[i]);
+        }
 
-            strcat(mqtt_cfg->password, ";hmacsha256");
+        strcat(mqtt_cfg->password, ";hmacsha256");
 
-            asprintf(&mqtt_cfg->host, "mqtt://%s.%s:%d", esp_qcloud_get_product_id(),
-             QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS);
+        asprintf(&mqtt_cfg->host, "mqtt://%s.%s:%d", esp_qcloud_get_product_id(),
+                 QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_NOTLS);
 
 EXIT:
 
-            if (err != 0) {
-                char err_buf[128] = {0};
-                mbedtls_strerror(err, err_buf, sizeof(err_buf) - 1);
-                ESP_LOGW(TAG, "%s", err_buf);
-            }
-
-            mbedtls_md_free(&sha_ctx);
-            break;
+        if (err != 0) {
+            char err_buf[128] = {0};
+            mbedtls_strerror(err, err_buf, sizeof(err_buf) - 1);
+            ESP_LOGW(TAG, "%s", err_buf);
         }
 
-        case QCLOUD_AUTH_MODE_CERT:
-            mqtt_cfg->client_cert = (char *)esp_qcloud_get_cert_crt();
-            mqtt_cfg->client_key  = (char *)esp_qcloud_get_private_key();
+        mbedtls_md_free(&sha_ctx);
+        break;
+    }
+
+    case QCLOUD_AUTH_MODE_CERT:
+        mqtt_cfg->client_cert = (char *)esp_qcloud_get_cert_crt();
+        mqtt_cfg->client_key  = (char *)esp_qcloud_get_private_key();
 
 #ifdef CONFIG_AUTH_MODE_CERT
-            mqtt_cfg->server_cert = (char *)qcloud_root_cert_crt_start;
+        mqtt_cfg->server_cert = (char *)qcloud_root_cert_crt_start;
 #endif
-            /* When using certificate authentication, Qcloud does not verify the password */
-            mqtt_cfg->password = QCLOUD_IOTHUB_DEVICE_SDK_APPID;
+        /* When using certificate authentication, Qcloud does not verify the password */
+        mqtt_cfg->password = QCLOUD_IOTHUB_DEVICE_SDK_APPID;
 
-            asprintf(&mqtt_cfg->host, "mqtts://%s.%s:%d", esp_qcloud_get_product_id(),
-             QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS);
-            break;
+        asprintf(&mqtt_cfg->host, "mqtts://%s.%s:%d", esp_qcloud_get_product_id(),
+                 QCLOUD_IOTHUB_MQTT_DIRECT_DOMAIN, QCLOUD_IOTHUB_MQTT_SERVER_PORT_TLS);
+        break;
 
-        default:
-            ESP_LOGE(TAG, "Does not support this authentication method, auth_mode: %d", esp_qcloud_get_auth_mode());
-            break;
+    default:
+        ESP_LOGE(TAG, "Does not support this authentication method, auth_mode: %d", esp_qcloud_get_auth_mode());
+        break;
     }
 
     return err;
@@ -267,24 +276,24 @@ static void esp_qcloud_iothub_property_callback(const char *topic, void *payload
 
     const char *method = cJSON_GetObjectItem(request_data, "method")->valuestring;
 
-    if(!strcmp(method, "control")) {
+    if (!strcmp(method, "control")) {
         cJSON *request_params = cJSON_GetObjectItem(request_data, "params");
         err = esp_qcloud_handle_set_param(request_params, reply_data);
         esp_qcloud_iothub_reply("control_reply", client_token, err, reply_data);
-    } else if(!strcmp(method, "get_status_reply")){
+    } else if (!strcmp(method, "get_status_reply")) {
         const int result_code = cJSON_GetObjectItem(request_data, "code")->valueint;
-        if(0 == result_code) {
+        if (0 == result_code) {
             cJSON *data = cJSON_GetObjectItem(request_data, "data");
             ESP_QCLOUD_ERROR_GOTO(!data, EXIT, "The data format is wrong, the 'data' field is not included");
             cJSON *reported = cJSON_GetObjectItem(data, "reported");
             char *reported_str = cJSON_PrintUnformatted(reported);
-            if(g_get_status_need_update){
+            if (g_get_status_need_update) {
                 esp_qcloud_handle_set_param(reported, reply_data);
             }
             /*Need to pass true length (including '/0')*/
             esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_RECEIVE_STATUS, reported_str, strlen(reported_str) + 1, portMAX_DELAY);
             ESP_QCLOUD_FREE(reported_str);
-        } 
+        }
     }
 
 EXIT:
@@ -297,7 +306,7 @@ static esp_err_t esp_qcloud_iothub_register_property()
     esp_err_t err = ESP_FAIL;
 
     err = esp_qcloud_iothub_subscribe("property", esp_qcloud_iothub_property_callback);
-    ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_iotbub_subscribe");
+    ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_iothub_subscribe");
 
     return err;
 }
@@ -355,7 +364,11 @@ static esp_err_t esp_qcloud_iothub_register_log()
 
     asprintf(&publish_topic, "$log/operation/%s/%s",
              esp_qcloud_get_product_id(), esp_qcloud_get_device_name());
+#if (ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0))
+    asprintf(&publish_data, "{\"type\":\"get_log_level\",\"clientToken\": \"%s-%05lu\"}", esp_qcloud_get_product_id(), esp_random() % 100000);
+#else
     asprintf(&publish_data, "{\"type\":\"get_log_level\",\"clientToken\": \"%s-%05u\"}", esp_qcloud_get_product_id(), esp_random() % 100000);
+#endif
     err = esp_qcloud_mqtt_publish(publish_topic, publish_data, strlen(publish_data));
     ESP_QCLOUD_ERROR_GOTO(err != ESP_OK, EXIT, "<%s> Publish to %s, data: %s",
                           esp_err_to_name(err), publish_topic,  publish_data);
@@ -406,19 +419,17 @@ static void esp_qcloud_iothub_bond_callback(const char *topic, void *payload, si
     ESP_QCLOUD_ERROR_GOTO(!method, EXIT, "The data format is wrong, the 'clientToken' field is not included");
 
     if (!strcmp(method, "unbind_device")) {
-        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE, NULL, 0, portMAX_DELAY);
+        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_UNBOUND_DEVICE, NULL, 0, portMAX_DELAY);
     } else if (!strcmp(method, "app_bind_token_reply")) {
         const int result_code = cJSON_GetObjectItem(root_json, "code")->valueint;
         esp_qcloud_storage_erase("token");
 
-#ifdef CONFIG_LIGHT_PROVISIONING_BLECONFIG
-           /* This is an asynchronous operation, need to wait for the data to be sent */          
-            esp_qcloud_prov_ble_report_bind_status(result_code);
-            vTaskDelay(10);
-            esp_qcloud_prov_ble_stop();
+#ifdef CONFIG_QCLOUD_ENABLE_BLECONFIG
+        /* This is an asynchronous operation, need to wait for the data to be sent */
+        esp_qcloud_prov_ble_report_bind_status(result_code);
 #endif
 
-        if(0 == result_code){
+        if (0 == result_code) {
             ESP_LOGI(TAG, "Successfully bind to the cloud");
             ESP_LOGW(TAG, "Waiting to be bound to the family");
         } else {
@@ -428,7 +439,7 @@ static void esp_qcloud_iothub_bond_callback(const char *topic, void *payload, si
     } else if (!strcmp(method, "bind_device")) {
         ESP_LOGI(TAG, "Successfully bound to the family");
         xEventGroupSetBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS);
-        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOND_DEVICE, NULL, 0, portMAX_DELAY);
+        esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BOUND_DEVICE, NULL, 0, portMAX_DELAY);
     }
 
 EXIT:
@@ -448,7 +459,7 @@ static esp_err_t esp_qcloud_iothub_register_service()
 esp_err_t esp_qcloud_iothub_bind(const char *token, bool block)
 {
     esp_err_t err = ESP_FAIL;
-    
+
     cJSON *data_json = cJSON_CreateObject();
     cJSON_AddStringToObject(data_json, "token", token);
 
@@ -470,12 +481,12 @@ esp_err_t esp_qcloud_iothub_bind(const char *token, bool block)
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "<%s> esp_qcloud_iothub_publish", esp_err_to_name(err));
 #endif
 
-    if(true == block) {
-        EventBits_t bits = xEventGroupWaitBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS | IOTHUB_EVENT_BIND_FAIL, 
-                                                                false, false, pdMS_TO_TICKS(QCLOUD_IOTHUB_BINDING_TIMEOUT));
+    if (true == block) {
+        EventBits_t bits = xEventGroupWaitBits(g_iothub_group, IOTHUB_EVENT_BIND_SUCCESS | IOTHUB_EVENT_BIND_FAIL,
+                                               false, false, pdMS_TO_TICKS(QCLOUD_IOTHUB_BINDING_TIMEOUT));
         if (bits & IOTHUB_EVENT_BIND_FAIL) {
             return ESP_FAIL;
-        } else if(bits & IOTHUB_EVENT_BIND_SUCCESS) {
+        } else if (bits & IOTHUB_EVENT_BIND_SUCCESS) {
             return ESP_OK;
         } else {
             esp_event_post(QCLOUD_EVENT, QCLOUD_EVENT_IOTHUB_BIND_EXCEPTION, NULL, 0, portMAX_DELAY);
@@ -514,7 +525,7 @@ esp_err_t esp_qcloud_iothub_report_device_info(void)
     cJSON_AddStringToObject(data_json, "module_hardinfo", CONFIG_IDF_TARGET);
     cJSON_AddStringToObject(data_json, "module_softinfo", esp_get_idf_version());
     cJSON_AddStringToObject(data_json, "fw_ver", esp_qcloud_get_version());
-    cJSON_AddStringToObject(data_json, "mac", (const char*)&mac_str);
+    cJSON_AddStringToObject(data_json, "mac", (const char *)&mac_str);
 
     /*You can add custom information, which will be displayed in the expanded information section of the QCloud*/
     cJSON_AddStringToObject(device_label, "manufacturer", "ESPRESSIF");
@@ -541,12 +552,12 @@ static void esp_qcloud_iothub_event_callback(const char *topic, void *payload, s
 
     if (!strcmp(method, "event_reply")) {
         const int result_code = cJSON_GetObjectItem(root_json, "code")->valueint;
-        if(0 == result_code){
+        if (0 == result_code) {
             ESP_LOGI(TAG, "post event succeed");
         } else {
             ESP_LOGE(TAG, "post event failed, reason code: %d", result_code);
         }
-    } 
+    }
 
 EXIT:
     cJSON_Delete(root_json);
@@ -671,7 +682,7 @@ esp_err_t esp_qcloud_iothub_param_add_float(esp_qcloud_method_t *method, char *i
     item->id = id;
     item->value.f = (float)value;
     item->value.type = QCLOUD_VAL_TYPE_FLOAT;
-    
+
     esp_qcloud_param_t *last = SLIST_FIRST(&method->method_param_list);
     if (last == NULL) {
         SLIST_INSERT_HEAD(&method->method_param_list, item, next);
@@ -701,7 +712,7 @@ esp_err_t esp_qcloud_iothub_param_add_string(esp_qcloud_method_t *method, char *
     return ESP_OK;
 }
 
-esp_err_t esp_qcloud_iothub_param_add_bool(esp_qcloud_method_t *method, char* id, bool value)
+esp_err_t esp_qcloud_iothub_param_add_bool(esp_qcloud_method_t *method, char *id, bool value)
 {
     ESP_QCLOUD_ERROR_CHECK(!method || !id, ESP_FAIL, "method or id is a null pointer");
 
@@ -758,9 +769,9 @@ esp_err_t esp_qcloud_iothub_destroy_report(esp_qcloud_method_t *report)
     ESP_QCLOUD_ERROR_CHECK(!report, ESP_FAIL, "report is a null pointer");
 
     while (!SLIST_EMPTY(&report->method_param_list)) {
-        esp_qcloud_param_t *item = SLIST_FIRST(&report->method_param_list);	
-	    SLIST_REMOVE_HEAD(&report->method_param_list, next);
-        if(item->value.type == QCLOUD_VAL_TYPE_STRING){
+        esp_qcloud_param_t *item = SLIST_FIRST(&report->method_param_list);
+        SLIST_REMOVE_HEAD(&report->method_param_list, next);
+        if (item->value.type == QCLOUD_VAL_TYPE_STRING) {
             ESP_QCLOUD_FREE(item->value.s);
         }
         ESP_QCLOUD_FREE(item);
@@ -776,9 +787,9 @@ esp_err_t esp_qcloud_iothub_destroy_event(esp_qcloud_method_t *event)
     ESP_QCLOUD_ERROR_CHECK(!event, ESP_FAIL, "event is a null pointer");
 
     while (!SLIST_EMPTY(&event->method_param_list)) {
-        esp_qcloud_param_t *item = SLIST_FIRST(&event->method_param_list);	
-	    SLIST_REMOVE_HEAD(&event->method_param_list, next);
-        if(item->value.type == QCLOUD_VAL_TYPE_STRING){
+        esp_qcloud_param_t *item = SLIST_FIRST(&event->method_param_list);
+        SLIST_REMOVE_HEAD(&event->method_param_list, next);
+        if (item->value.type == QCLOUD_VAL_TYPE_STRING) {
             ESP_QCLOUD_FREE(item->value.s);
         }
         ESP_QCLOUD_FREE(item);
@@ -795,9 +806,9 @@ esp_err_t esp_qcloud_iothub_destroy_action(esp_qcloud_method_t *action)
     ESP_QCLOUD_ERROR_CHECK(!action, ESP_FAIL, "action is a null pointer");
 
     while (!SLIST_EMPTY(&action->method_param_list)) {
-        esp_qcloud_param_t *item = SLIST_FIRST(&action->method_param_list);	
-	    SLIST_REMOVE_HEAD(&action->method_param_list, next);
-        if(item->value.type == QCLOUD_VAL_TYPE_STRING){
+        esp_qcloud_param_t *item = SLIST_FIRST(&action->method_param_list);
+        SLIST_REMOVE_HEAD(&action->method_param_list, next);
+        if (item->value.type == QCLOUD_VAL_TYPE_STRING) {
             ESP_QCLOUD_FREE(item->value.s);
         }
         ESP_QCLOUD_FREE(item);
@@ -812,9 +823,9 @@ static esp_err_t esp_qcloud_get_topic_and_method_name(char **topic_name, char **
 {
     static char *topic_name_list[TOPIC_METHOD_NAME_MAX_SIZE] = {"event", "action", "service", "property"};
     static char *method_name_list[TOPIC_METHOD_NAME_MAX_SIZE] = {"event_post", "action_reply", "", "report"};
-    if(type == QCLOUD_METHOD_TYPE_INVALID || type >= QCLOUD_METHOD_TYPE_MAX_INVALID || topic_name == NULL || method_name == NULL){
+    if (type == QCLOUD_METHOD_TYPE_INVALID || type >= QCLOUD_METHOD_TYPE_MAX_INVALID || topic_name == NULL || method_name == NULL) {
         return ESP_FAIL;
-    } else if (type == QCLOUD_METHOD_TYPE_EVENT){
+    } else if (type == QCLOUD_METHOD_TYPE_EVENT) {
         *topic_name = topic_name_list[0];
     } else if (type == QCLOUD_METHOD_TYPE_ACTION_REPLY) {
         *topic_name = topic_name_list[1];
@@ -822,7 +833,7 @@ static esp_err_t esp_qcloud_get_topic_and_method_name(char **topic_name, char **
         return ESP_ERR_NOT_SUPPORTED;
     } else {
         *topic_name = topic_name_list[3];
-    } 
+    }
     *method_name = method_name_list[type - 1];
 
     return ESP_OK;
@@ -837,7 +848,7 @@ esp_err_t esp_qcloud_iothub_post_method(esp_qcloud_method_t *method)
     char *topic_name   = NULL;
     char *method_name  = NULL;
     cJSON *params_json = cJSON_CreateObject();
-    
+
     SLIST_FOREACH(param, &method->method_param_list, next) {
         ESP_LOGD(TAG, "esp_qcloud_iothub_post_method %s", param->id);
         if (param->value.type == QCLOUD_VAL_TYPE_INTEGER) {

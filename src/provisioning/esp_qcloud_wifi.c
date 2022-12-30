@@ -45,9 +45,9 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         /* Signal main application to continue execution */
         xEventGroupSetBits(s_wifi_event_group, QCLOUD_PROV_EVENT_STA_CONNECTED);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t*) event_data;
+        wifi_event_sta_disconnected_t *disconnected = (wifi_event_sta_disconnected_t *) event_data;
         ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
-        if(disconnected->reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT){
+        if (disconnected->reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
             ESP_LOGE(TAG, "wrong password");
             return;
         }
@@ -77,7 +77,7 @@ esp_err_t esp_qcloud_wifi_init(void)
     /* Register our event handler for Wi-Fi, IP and Provisioning related events */
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
-    
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
     return ESP_OK;
@@ -100,7 +100,7 @@ esp_err_t esp_qcloud_wifi_reset(void)
     esp_err_t err = ESP_FAIL;
     err = esp_wifi_restore();
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_wifi_restore fail, reason: %s", esp_err_to_name(err));
-    
+
     err = esp_qcloud_storage_erase("wifi_config");
     ESP_QCLOUD_ERROR_CHECK(err != ESP_OK, err, "esp_qcloud_storage_erase fail, reason: %s", esp_err_to_name(err));
 

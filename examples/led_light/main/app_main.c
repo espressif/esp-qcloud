@@ -16,11 +16,7 @@
 #include "esp_qcloud_iothub.h"
 #include "esp_qcloud_prov.h"
 
-#include "light_driver.h"
-
-#ifdef CONFIG_BT_ENABLE
-#include "esp_bt.h"
-#endif
+#include "lightbulb.h"
 
 static const char *TAG = "app_main";
 
@@ -28,13 +24,13 @@ static const char *TAG = "app_main";
 static esp_err_t light_get_param(const char *id, esp_qcloud_param_val_t *val)
 {
     if (!strcmp(id, "power_switch")) {
-        val->b = light_driver_get_switch();
+        val->b = lightbulb_get_switch();
     } else if (!strcmp(id, "value")) {
-        val->i = light_driver_get_value();
+        val->i = lightbulb_get_value();
     } else if (!strcmp(id, "hue")) {
-        val->i = light_driver_get_hue();
+        val->i = lightbulb_get_hue();
     } else if (!strcmp(id, "saturation")) {
-        val->i = light_driver_get_saturation();
+        val->i = lightbulb_get_saturation();
     }
 
     ESP_LOGI(TAG, "Report id: %s, val: %d", id, val->i);
@@ -49,17 +45,19 @@ static esp_err_t light_set_param(const char *id, const esp_qcloud_param_val_t *v
     ESP_LOGI(TAG, "Received id: %s, val: %d", id, val->i);
 
     if (!strcmp(id, "power_switch")) {
-        err = light_driver_set_switch(val->b);
+        err = lightbulb_set_switch(val->b);
     } else if (!strcmp(id, "value")) {
-        err = light_driver_set_value(val->i);
+        err = lightbulb_set_value(val->i);
     } else if (!strcmp(id, "hue")) {
-        err = light_driver_set_hue(val->i);
+        err = lightbulb_set_hue(val->i);
     } else if (!strcmp(id, "saturation")) {
-        err = light_driver_set_saturation(val->i);
+        err = lightbulb_set_saturation(val->i);
     } else {
         ESP_LOGW(TAG, "This parameter is not supported");
     }
 
+    /* Report driver changes to the cloud side */
+    esp_qcloud_iothub_report_all_property();
     return err;
 }
 
@@ -73,11 +71,15 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             ESP_LOGI(TAG, "QCloud Initialised");
             break;
 
-        case QCLOUD_EVENT_IOTHUB_BOND_DEVICE:
+        case QCLOUD_EVENT_IOTHUB_BOUND_DEVICE:
+
+#ifdef CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG
+            esp_qcloud_prov_softapconfig_stop();
+#endif
             ESP_LOGI(TAG, "Device binding successful");
             break;
 
-        case QCLOUD_EVENT_IOTHUB_UNBOND_DEVICE:
+        case QCLOUD_EVENT_IOTHUB_UNBOUND_DEVICE:
             ESP_LOGW(TAG, "Device unbound with iothub");
             esp_qcloud_wifi_reset();
             esp_restart();
@@ -94,8 +96,93 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             break;
 
         default:
-            ESP_LOGW(TAG, "Unhandled QCloud Event: %d", event_id);
+            ESP_LOGW(TAG, "Unhandled QCloud Event: %"PRIu32"", event_id);
     }
+}
+
+static esp_err_t example_driver_init(void)
+{
+    lightbulb_config_t config = {
+        //1. Select and configure the chip
+#ifdef CONFIG_LIGHTBULB_DEMO_DRIVER_SELECT_WS2812
+        .type = DRIVER_WS2812,
+        .driver_conf.ws2812.led_num = CONFIG_WS2812_LED_NUM,
+        .driver_conf.ws2812.ctrl_io = CONFIG_WS2812_LED_GPIO,
+#endif
+#ifdef CONFIG_LIGHTBULB_DEMO_DRIVER_SELECT_PWM
+        .type = DRIVER_ESP_PWM,
+        .driver_conf.pwm.freq_hz = CONFIG_PWM_FREQ_HZ,
+#ifdef CONFIG_IDF_TARGET_ESP32C2
+        /* Adapt to ESP8684-DevKitM-1 
+         * For details, please refer to: 
+         * https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp8684/esp8684-devkitm-1/user_guide.html
+        */
+        .driver_conf.pwm.invert_level = true,
+#endif
+#endif
+#ifdef CONFIG_LIGHTBULB_DEMO_DRIVER_SELECT_SM2135E
+        .type = DRIVER_SM2135E,
+        .driver_conf.sm2135e.freq_khz = 400,
+        .driver_conf.sm2135e.enable_iic_queue = true,
+        .driver_conf.sm2135e.iic_clk = CONFIG_SM2135E_IIC_CLK_GPIO,
+        .driver_conf.sm2135e.iic_sda = CONFIG_SM2135E_IIC_SDA_GPIO,
+        .driver_conf.sm2135e.rgb_current = SM2135E_RGB_CURRENT_20MA,
+        .driver_conf.sm2135e.wy_current = SM2135E_WY_CURRENT_40MA,
+#endif
+        // 2. Configure the drive capability
+        .capability.enable_fades = true,
+        .capability.fades_ms = 800,
+        .capability.enable_status_storage = false,
+        .capability.mode_mask = COLOR_MODE,
+        .capability.storage_cb = NULL,
+
+        //3. Configure driver io
+#ifdef CONFIG_LIGHTBULB_DEMO_DRIVER_SELECT_PWM
+        .io_conf.pwm_io.red = CONFIG_PWM_RED_GPIO,
+        .io_conf.pwm_io.green = CONFIG_PWM_GREEN_GPIO,
+        .io_conf.pwm_io.blue = CONFIG_PWM_BLUE_GPIO,
+#endif
+#ifdef CONFIG_LIGHTBULB_DEMO_DRIVER_SELECT_SM2135E
+        .io_conf.iic_io.red = OUT3,
+        .io_conf.iic_io.green = OUT2,
+        .io_conf.iic_io.blue = OUT1,
+        .io_conf.iic_io.cold_white = OUT5,
+        .io_conf.iic_io.warm_yellow = OUT4,
+#endif
+        //4. Limit param
+        .external_limit = NULL,
+
+        //5. Gamma param
+        .gamma_conf = NULL,
+
+        //6. Init param
+        .init_status.mode = WORK_COLOR,
+        .init_status.on = true,
+        .init_status.hue = 0,
+        .init_status.saturation = 100,
+        .init_status.value = 100,
+    };
+    return lightbulb_init(&config);
+}
+
+static esp_err_t example_provisioning_indicate_start(void)
+{
+    lightbulb_effect_config_t effect = {
+        .red = 255,
+        .green = 255,
+        .blue = 0,
+        .max_brightness = 100,
+        .min_brightness = 0,
+        .effect_cycle_ms = 1000,
+        .effect_type = EFFECT_BREATH,
+        .mode = WORK_COLOR,
+    };
+    return lightbulb_basic_effect_start(&effect);
+}
+
+static esp_err_t example_provisioning_indicate_stop(void)
+{
+    return lightbulb_basic_effect_stop_and_restore();
 }
 
 static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
@@ -104,7 +191,7 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
 
     if (esp_qcloud_storage_get("wifi_config", wifi_cfg, sizeof(wifi_config_t)) == ESP_OK) {
 
-#ifdef CONFIG_BT_ENABLE
+#ifdef CONFIG_LIGHT_PROVISIONING_BLECONFIG
     esp_bt_controller_mem_release(ESP_BT_MODE_BTDM);
 #endif
 
@@ -116,20 +203,15 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
     esp_wifi_start();
 
     /**< The yellow light flashes to indicate that the device enters the state of configuring the network */
-    light_driver_breath_start(128, 128, 0); /**< yellow blink */
+    example_provisioning_indicate_start();
 
     /**< Note: Smartconfig and softapconfig working at the same time will affect the configure network performance */
 
 #ifdef CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG
     char softap_ssid[32 + 1] = CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG_SSID;
-    // uint8_t mac[6] = {0};
-    // ESP_ERROR_CHECK(esp_wifi_get_mac(WIFI_IF_STA, mac));
-    // sprintf(softap_ssid, "tcloud_%s_%02x%02x", light_driver_get_type(), mac[4], mac[5]);
-
     esp_qcloud_prov_softapconfig_start(SOFTAPCONFIG_TYPE_ESPRESSIF_TENCENT,
                                        softap_ssid,
-                                       CONFIG_LIGHT_PROVISIONING_SOFTAPCONFIG_PASSWORD);
-    esp_qcloud_prov_print_wechat_qr(softap_ssid, "softap");
+                                       NULL);
 #endif
 
 #ifdef CONFIG_LIGHT_PROVISIONING_SMARTCONFIG
@@ -141,6 +223,7 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
     esp_qcloud_prov_bleconfig_start(BLECONFIG_TYPE_ESPRESSIF_TENCENT, local_name);
 #endif
 
+    esp_qcloud_prov_print_wechat_qr();
     ESP_ERROR_CHECK(esp_qcloud_prov_wait(wifi_cfg, wait_ms));
 
 #ifdef CONFIG_LIGHT_PROVISIONING_SMARTCONFIG
@@ -155,7 +238,7 @@ static esp_err_t get_wifi_config(wifi_config_t *wifi_cfg, uint32_t wait_ms)
     esp_qcloud_storage_set("wifi_config", wifi_cfg, sizeof(wifi_config_t));
 
     /**< Configure the network successfully to stop the light flashing */
-    light_driver_breath_stop(); /**< stop blink */
+    example_provisioning_indicate_stop();
 
     return ESP_OK;
 }
@@ -184,23 +267,13 @@ void app_main()
     /**
      * @brief Initialize Application specific hardware drivers and set initial state.
      */
-    light_driver_config_t driver_cfg = COFNIG_LIGHT_TYPE_DEFAULT();
-    ESP_ERROR_CHECK(light_driver_init(&driver_cfg));
+    ESP_ERROR_CHECK(example_driver_init());
 
     /**< Continuous power off and restart more than five times to reset the device */
     if (esp_qcloud_reboot_unbroken_count() >= CONFIG_LIGHT_REBOOT_UNBROKEN_COUNT_RESET) {
         ESP_LOGW(TAG, "Erase information saved in flash");
         esp_qcloud_storage_erase(CONFIG_QCLOUD_NVS_NAMESPACE);
-    } else if (esp_qcloud_reboot_is_exception(false)) {
-        ESP_LOGE(TAG, "The device has been restarted abnormally");
-#ifdef CONFIG_LIGHT_DEBUG
-        light_driver_breath_start(255, 0, 0); /**< red blink */
-#else
-        ESP_ERROR_CHECK(light_driver_set_switch(true));
-#endif /**< CONFIG_LIGHT_DEBUG */
-    } else {
-        ESP_ERROR_CHECK(light_driver_set_switch(true));
-    }
+    } 
 
     /*
      * @breif Create a device through the server and obtain configuration parameters

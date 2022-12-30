@@ -1,8 +1,9 @@
-# Smart Light 
+# Smart Light
 
 `Smart Light` 使用 `ESP32、ESP32S2` 配合 `腾讯连连小程序` 演示了一个智能灯控制方案。
 
 功能：
+
 - 通过腾讯连连小程序配网、控制
 - 支持 `OTA` 升级功能、版本回滚
 
@@ -26,7 +27,7 @@
 
 2. **数据模板**
 
-    通过 `标准功能-导入 JSON ` 添加标准属性，[点击查看 light 的 json 文件](./data_template_light.json) 。
+    通过 `标准功能-导入 JSON` 添加标准属性，[点击查看 light 的 json 文件](./data_template_light.json) 。
 
 <div align="center">  
 <img src="./_static/qcloud_02.png" width = "600" height = "407" alt="云平台_导入json" align=center >
@@ -72,34 +73,30 @@
         idf.py menuconfig
         ```
 
-    2. **在 `ESP QCloud Example Configuration -> Light development board selection -> light hardware type` 中选择 `Custom`**
+    2. **在 `ESP QCloud Example Configuration -> Light development board selection ->  Demo select` 中选择**
 
         ```shell
-        ( ) ESP32 moonlight
-        ( ) ESP32-MeshKit Light
-        (X) Custom
+        ( ) Demo SM2135E
+        ( ) Demo WS2812
+        (X) Demo PWM
         ```
 
     3. **根据 `light` 种类填写对应 `GPIO` 号**
 
-        若是 `单色 LED`，可随意接入任意 `RGB` 脚，`单色 LED` 只能完成开关功能，无法调色。若是 `RGB`、`RGB + 色温色调`，请按实际 `GPIO` 接入。
+        此处以 PWM 控制的灯珠为例，根据情况填入 IO。
 
         ```shell
-        (25) Light red pin GPIO number
-        (26) Light green pin GPIO number
-        (27) Light blue pin GPIO number
-        (4) Light cold color pin GPIO number
-        (16) Light warm color pin GPIO number
-        (500) The time from the current color to the next color
-        (3000) Period of blinking lights
+            Demo select (Demo PWM)  --->
+        (4000) PWM Frequency (hz)
+        (25) PWM Red GPIO
+        (26) PWM Green GPIO
+        (27) PWM Blue GPIO
         ```
-        
+
         在配网时，`light` 会进入呼吸灯模式，用以提示状态。
-        - `The time from the current color to the next color`，可配置颜色切换的时间。
-        - `Period of blinking lights`，可配置呼吸灯循环的周期。
 
 2. **烧录认证信息**
-    
+
     认证信息通常为 `PRODUCT_ID`、 `DEVICE_NAME`、 `DEVICE_SECRET`，当成功获取到认证信息时，可以选择下述任意一种方式完成信息烧录。
     - **通过 `menuconfig` 配置界面**
         1. **进入 `menuconfig` 配置界面**
@@ -126,9 +123,9 @@
         3. **填入你的信息**
 
             填写你的 `产品 ID (PRODUCT_ID)`、 `设备名称 (DEVICE_NAME)`、 `设备密钥 (DEVICE_SECRET)`。
-        
+
     - **通过量产工具配置**
-    
+
         请参考量产工具目录下的 [文档](./../../config/mass_mfg/README.md)，另外需要 <b>开启</b> `ESP Qcloud Mass Manufacture` 选项。
 
 3. **构建&运行工程**
@@ -182,7 +179,7 @@
         <div align="center">  
         <img src="./_static/app_softap_01.jpg" width = "200" height = "425" alt="小程序_热点配网_01" align=center >
         </div>
-        
+
         <div align="center">  
         <img src="./_static/app_softap_02.jpg" width = "200" height = "425" alt="小程序_热点配网_02" align=center >
         </div>
@@ -194,7 +191,7 @@
         <div align="center">  
         <img src="./_static/app_ble_01.jpg" width = "200" height = "425" alt="小程序_蓝牙配网_01" align=center >
         </div>
-        
+
         <div align="center">  
         <img src="./_static/app_ble_02.jpg" width = "200" height = "425" alt="小程序_蓝牙配网_02" align=center >
         </div>
@@ -226,7 +223,7 @@
             ```shell
             idf.py menuconfig
             ```
-        
+
         2. **选择 `ESP QCloud Example Configuration`**
 
             ```shell
@@ -238,7 +235,7 @@
             - `More than this number of continuous uninterrupted restarts triggers a reset of the device`，该选项可配置复位所需的次数。
 
         3. **选择 `ESP QCloud Config -> QCloud utils`**
-            
+
             ```shell
             The memory location allocated by QCLOUD_MALLOC QCLOUD_CALLOC and QCLOUD_REALLOC (default allocation strategy)  --->
             [*] Memory debug
@@ -246,7 +243,7 @@
             (qcloud_app) Namespace where data is stored in NVS
             (3000) Continuous reboot interval(ms)
             (30) Continuous restart triggers version rollback
-            ```    
+            ```
 
             - `Continuous reboot interval`，该选项可配置重启间隔时间。
 
@@ -267,12 +264,10 @@
             [*] Enable SoftAP's network configuration method
             [*] Enable BLE's network configuration method
             (tcloud_XXX) SoftAP ssid
-            ()      SoftAP password
-            ()  SoftAP password
             (Qcloud) BLE name
             ```  
 
-            - 当开启 `Enable SoftAP's network configuration method`，将能看到配置 `SSID`与 `PSW` 的选项。
+            - 当开启 `Enable SoftAP's network configuration method`，将能看到配置 `SSID` 的选项。
             - 当开启 `Enable SmartConfig's smart network configuration method`，将默认同时启动 `esp-touch v1` 与 `AirKiss` 协议。
             - 当开启 `Enable BLE's network configuration method`，将能看到配置 `BLE name`。
             >为了能够正常配网，至少需要保证一项的开启，当前支持三种配网同时开启。当同时开启，配网速度将受到一定的影响。
@@ -349,7 +344,8 @@
             ```shell
             [*] Skip firmware version check
             [*] Skip project name check
-            ``` 
+            ```
+
             - `Skip firmware version check`，当选择开启时，将跳过检查当前固件芯片。
             - `Skip project name check`，当选择开启时，将跳过检查当前固件命名。
 
@@ -361,7 +357,7 @@
             (qcloud_app) Namespace where data is stored in NVS
             (3000) Continuous reboot interval(ms)
             (30) Continuous restart triggers version rollback
-            ``` 
+            ```
 
             - `Continuous restart triggers version rollback`，该选项可配置触发回滚所需的连续重启次数。
 
@@ -386,10 +382,10 @@
         Light provisioning network selection  --->
         (5) More than this number of continuous uninterrupted restarts triggers a reset of the device
         [*] The device will be in debug mode
-        ``` 
+        ```
 
         - `The device will be in debug mode`，该选项可配置设备调试是否开启。
-        
+
     3. **查看调试信息**
 
         - 该例程默认 10s 打印一次运行状态。
@@ -428,7 +424,7 @@
         I (15532) esp_qcloud_mem: sys_evt               B       20      596     10      0       2884            <1
         ```
 
-- **云端日志查看**    
+- **云端日志查看**
 
     该例程已实现日志上传、云端存储功能，如有需要，开启方法如下：
 
@@ -437,7 +433,7 @@
     <div  align="center">  
     <img src="./_static/qcloud_09.png" width = "600" height = "289" alt="云平台_开启调试日志" align=center >
     </div>
-    
+
     2. **查看日志**
 
     <div  align="center">  

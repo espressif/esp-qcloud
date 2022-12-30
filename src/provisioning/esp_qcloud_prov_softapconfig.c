@@ -39,40 +39,40 @@ static void prov_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
     switch (event_id) {
-        case WIFI_PROV_START:
-            ESP_LOGI(TAG, "Provisioning started");
-            break;
+    case WIFI_PROV_START:
+        ESP_LOGI(TAG, "Provisioning started");
+        break;
 
-        case WIFI_PROV_CRED_RECV: {
-            wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *)event_data;
-            ESP_LOGI(TAG, "Received Wi-Fi credentials"
-                     "\n\tSSID: %s\n\tPassword : %s\n\tChannel: %d",
-                     (const char *) wifi_sta_cfg->ssid,
-                     (const char *) wifi_sta_cfg->password,
-                     wifi_sta_cfg->channel);
-            break;
-        }
+    case WIFI_PROV_CRED_RECV: {
+        wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *)event_data;
+        ESP_LOGI(TAG, "Received Wi-Fi credentials"
+                 "\n\tSSID: %s\n\tPassword : %s\n\tChannel: %d",
+                 (const char *) wifi_sta_cfg->ssid,
+                 (const char *) wifi_sta_cfg->password,
+                 wifi_sta_cfg->channel);
+        break;
+    }
 
-        case WIFI_PROV_CRED_FAIL: {
-            wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *)event_data;
-            ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
-                     "\n\tPlease reset to factory and retry provisioning",
-                     (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
-                     "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
-            break;
-        }
+    case WIFI_PROV_CRED_FAIL: {
+        wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *)event_data;
+        ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
+                 "\n\tPlease reset to factory and retry provisioning",
+                 (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
+                 "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
+        break;
+    }
 
-        case WIFI_PROV_CRED_SUCCESS:
-            ESP_LOGI(TAG, "Provisioning successful");
-            break;
+    case WIFI_PROV_CRED_SUCCESS:
+        ESP_LOGI(TAG, "Provisioning successful");
+        break;
 
-        case WIFI_PROV_END:
-            /* De-initialize manager once provisioning is finished */
-            wifi_prov_mgr_deinit();
-            break;
+    case WIFI_PROV_END:
+        /* De-initialize manager once provisioning is finished */
+        wifi_prov_mgr_deinit();
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 }
 
@@ -139,7 +139,7 @@ esp_err_t esp_qcloud_prov_softapconfig_start(softapconfig_type_t type,
 
 esp_err_t esp_qcloud_prov_softapconfig_stop()
 {
-    wifi_prov_mgr_deinit();
+    wifi_prov_mgr_stop_provisioning();
     esp_qcloud_prov_udp_server_stop();
 
     return ESP_OK;

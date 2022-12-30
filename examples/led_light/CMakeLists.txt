@@ -22,10 +22,7 @@ if(NOT DEFINED IDF_TARGET)
 endif()
 
 # Add QCloud components and other common application components
-# This example uses an extra component for common functions such as led and button.
-set(EXTRA_COMPONENT_DIRS ${QCLOUD_PATH} 
-                         ${QCLOUD_PATH}/examples/common_components/led
-                         ${QCLOUD_PATH}/examples/common_components/button)
+set(EXTRA_COMPONENT_DIRS ${QCLOUD_PATH})
 
 # Performance Options
 if(NOT DEFINED PERF)
